@@ -506,7 +506,7 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'dr-meter', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'dr-meter', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);
 

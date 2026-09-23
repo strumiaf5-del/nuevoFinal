@@ -13,30 +13,31 @@
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   function clearRetiredSessionKeys() {
+    // LGMDM.persist.session centraliza sessionStorage con safe-parse/stringify.
     try {
-      LGMDM.storage.remove(TOKEN_KEY);
-      LGMDM.storage.remove(USER_KEY);
+      LGMDM.persist.session.remove(TOKEN_KEY);
+      LGMDM.persist.session.remove(USER_KEY);
     } catch (_) {}
   }
 
   function saveSession(token, user) {
-    sessionStorage.setItem(TOKEN_KEY, token);
-    sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+    LGMDM.persist.session.set(TOKEN_KEY, token);
+    LGMDM.persist.session.setJSON(USER_KEY, user);
     clearRetiredSessionKeys();
   }
 
   function clearSession() {
-    sessionStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem(USER_KEY);
+    LGMDM.persist.session.remove(TOKEN_KEY);
+    LGMDM.persist.session.remove(USER_KEY);
     clearRetiredSessionKeys();
   }
 
   function getToken() {
-    return sessionStorage.getItem(TOKEN_KEY);
+    return LGMDM.persist.session.get(TOKEN_KEY);
   }
 
   function getUser()  {
-    try { return JSON.parse(sessionStorage.getItem(USER_KEY) || 'null'); } catch { return null; }
+    return LGMDM.persist.session.getJSON(USER_KEY);
   }
 
   // La autenticación de transporte vive en 00-api.js (apiFetch/authHeaders).

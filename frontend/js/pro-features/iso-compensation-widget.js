@@ -160,6 +160,6 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'iso-compensation', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'iso-compensation', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);

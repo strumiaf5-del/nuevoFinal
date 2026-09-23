@@ -24,14 +24,13 @@
 
   const STATE_KEY = 'lgmdm.insert_rack.state.v1';
 
+  // LGMDM.persist.local centraliza localStorage con safe-parse/stringify
+  // (00-storage.js). Antes cada call site repetía try/catch manualmente.
   function loadState() {
-    try {
-      const raw = localStorage.getItem(STATE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (_) { return null; }
+    return LGMDM.persist.local.getJSON(STATE_KEY);
   }
   function saveState(s) {
-    try { localStorage.setItem(STATE_KEY, JSON.stringify(s)); } catch (_) {}
+    LGMDM.persist.local.setJSON(STATE_KEY, s);
   }
 
   function buildCard(spec, isBypassed) {

@@ -382,6 +382,6 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'spectral-tilt', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'spectral-tilt', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);

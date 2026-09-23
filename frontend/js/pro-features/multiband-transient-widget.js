@@ -239,6 +239,7 @@
           if (!Number.isInteger(idx)) return;
           const v = clampPct(e.target.value);
           this._user.attack[idx] = v;
+          this._syncMsFromUser(idx, 'attack');
           const out = root.querySelector(`.mtw-attack-out[data-idx="${idx}"]`);
           if (out) out.textContent = `${v > 0 ? '+' : ''}${v}%`;
         };
@@ -253,6 +254,7 @@
           if (!Number.isInteger(idx)) return;
           const v = clampPct(e.target.value);
           this._user.release[idx] = v;
+          this._syncMsFromUser(idx, 'release');
           const out = root.querySelector(`.mtw-release-out[data-idx="${idx}"]`);
           if (out) out.textContent = `${v > 0 ? '+' : ''}${v}%`;
         };
@@ -265,6 +267,11 @@
       if (amtEl) {
         const handler = (e) => {
           this._amount = clamp01(Number(e.target.value) / 100);
+          // Re-sincronizar ms porque _amount afecta el escalado user→ms.
+          for (let i = 0; i < 3; i++) {
+            this._syncMsFromUser(i, 'attack');
+            this._syncMsFromUser(i, 'release');
+          }
           const out = root.querySelector(`#mtw-amount-val-${this._uid}`);
           if (out) out.textContent = `${Math.round(this._amount * 100)}%`;
         };
@@ -282,16 +289,18 @@
     }
 
     _emitApply() {
-      const scaledAttack = this._user.attack.map((v) => clampPct(v * this._amount));
-      const scaledRelease = this._user.release.map((v) => clampPct(v * this._amount));
+      // Sincronizar state.attack_ms/release_ms con el estado actual de
+      // faders + amount (por si quedó desincronizado).
+      for (let i = 0; i < 3; i++) {
+        this._syncMsFromUser(i, 'attack');
+        this._syncMsFromUser(i, 'release');
+      }
+      // Una sola fuente de verdad: state.attack_ms[i] ya está actualizado.
       const payload = {
         bands: this.state.bands.slice(0, 3),
-        attack_pct: scaledAttack,
-        release_pct: scaledRelease,
         amount: this._amount,
-        // Mapeo aproximado a ms (rangos razonables de transient designer)
-        attack_ms: scaledAttack.map((p) => Math.max(0.5, 10 * Math.pow(10, p / 100))),
-        release_ms: scaledRelease.map((p) => Math.max(5, 100 * Math.pow(10, p / 100)))
+        attack_ms: this.state.attack_ms.slice(0, 3),
+        release_ms: this.state.release_ms.slice(0, 3),
       };
       // Pulse LEDs to acknowledge apply
       for (let i = 0; i < 3; i++) this.levels[i] = 1.0;
@@ -301,6 +310,19 @@
       if (LG && LG.ui && typeof LG.ui.showToast === 'function') {
         LG.ui.showToast('Transient Designer: parámetros aplicados.', 'success', 2500);
       }
+    }
+
+    _syncMsFromUser(idx, which) {
+      // Mantiene state.attack_ms/release_ms consistente con
+      // _user.attack/release × _amount. Llamado por cada input del fader
+      // y por el slider de Amount, así backend recibe valores frescos en
+      // _emitApply().
+      const userArr = which === 'attack' ? this._user.attack : this._user.release;
+      const msArr = which === 'attack' ? this.state.attack_ms : this.state.release_ms;
+      const pct = clampPct(userArr[idx] * this._amount);
+      const base = which === 'attack' ? 10 : 100;
+      const minMs = which === 'attack' ? 0.5 : 5;
+      msArr[idx] = Math.max(minMs, base * Math.pow(10, pct / 100));
     }
 
     _syncControlsFromState() {
@@ -404,7 +426,7 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'multiband-transient', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'multiband-transient', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);
 

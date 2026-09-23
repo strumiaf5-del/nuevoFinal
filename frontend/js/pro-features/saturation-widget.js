@@ -399,6 +399,6 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'saturation', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'saturation', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);

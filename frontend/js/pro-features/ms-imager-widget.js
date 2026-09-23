@@ -236,6 +236,6 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'ms-imager', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'ms-imager', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);

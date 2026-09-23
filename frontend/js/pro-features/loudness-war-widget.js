@@ -502,7 +502,7 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'loudness-war', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'loudness-war', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);
 

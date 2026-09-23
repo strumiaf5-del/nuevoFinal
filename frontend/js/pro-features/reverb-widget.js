@@ -560,7 +560,7 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'reverb', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'reverb', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);
 

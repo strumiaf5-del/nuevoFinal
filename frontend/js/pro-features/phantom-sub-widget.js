@@ -145,6 +145,6 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'phantom-sub', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'phantom-sub', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);

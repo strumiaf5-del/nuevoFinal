@@ -457,6 +457,6 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'phase-rotation', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'phase-rotation', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);

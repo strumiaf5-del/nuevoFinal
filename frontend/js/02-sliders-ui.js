@@ -49,14 +49,45 @@
 
       // Carga el catálogo de sliders desde el JSON inline en index.html.
       // Single source of truth: el archivo index.html (no el JS).
+      // Validación de schema (JS-I-12): si el JSON se desincroniza con
+      // index.html (entrada agregada sin entry acá, o fmt desconocido),
+      // el slider afectado queda sin live-update sin error visible. Esta
+      // validación falla loud con un mensaje claro en consola.
       const _slidersMetaEl = document.getElementById('sliders-meta');
       let sliders = [];
       if (_slidersMetaEl) {
         try {
           const entries = JSON.parse(_slidersMetaEl.textContent);
+          if (!Array.isArray(entries)) {
+            throw new Error("sliders-meta debe ser un array");
+          }
+          const seenIds = new Set();
+          const knownFmts = new Set(Object.keys(F));
+          for (let i = 0; i < entries.length; i++) {
+            const e = entries[i];
+            if (!e || typeof e !== "object") {
+              throw new Error(`entry[${i}] no es objeto`);
+            }
+            if (typeof e.id !== "string" || !e.id) {
+              throw new Error(`entry[${i}].id falta o no es string`);
+            }
+            if (typeof e.vid !== "string" || !e.vid) {
+              throw new Error(`entry[${i}].vid falta o no es string (id=${e.id})`);
+            }
+            if (typeof e.fmt !== "string" || !e.fmt) {
+              throw new Error(`entry[${i}].fmt falta o no es string (id=${e.id})`);
+            }
+            if (!knownFmts.has(e.fmt)) {
+              throw new Error(`entry[${i}].fmt='${e.fmt}' desconocido (id=${e.id})`);
+            }
+            if (seenIds.has(e.id)) {
+              throw new Error(`entry[${i}].id='${e.id}' duplicado`);
+            }
+            seenIds.add(e.id);
+          }
           sliders = entries.map(({ id, vid, fmt }) => [id, vid, F[fmt] || String]);
         } catch (err) {
-          console.debug('[02-sliders-ui] sliders-meta JSON inválido:', err);
+          console.error('[02-sliders-ui] sliders-meta inválido:', err);
         }
       }
       // Bootstrap: pinta el valor inicial de cada slider. Los updates en vivo

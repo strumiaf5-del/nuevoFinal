@@ -287,6 +287,6 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'loudness-penalty', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'loudness-penalty', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);

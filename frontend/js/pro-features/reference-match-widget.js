@@ -381,6 +381,6 @@
       }
     }
   } catch (e) {
-    if (typeof console !== 'undefined') console.debug('[insert-migration]', 'reference-match', e);
+    if (typeof console !== 'undefined') console.warn('[insert-migration]', 'reference-match', e);
   }
 })(typeof window !== 'undefined' ? window : globalThis);
