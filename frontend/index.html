@@ -1885,7 +1885,11 @@
 <script defer src="js/42-tab-codec.js" integrity="sha384-89/EISZfsRhEX7wL+5LFs9YU3PFOLfui4Avd/QdcojhSRHZ1IiqOBIsgUfNeq+d+" crossorigin="anonymous"></script>
 <script defer src="js/43-tab-waterfall.js" integrity="sha384-Jag28bgxTDdPK87/OusuJPX86BqeWbnFitTVlurzpHZ7jyeNPmLUm++TblqvpCnV" crossorigin="anonymous"></script>
 <!-- 34-premium-suite.js cargado al final (registra PRO_FEATURES en LGMDM.proFeatures después de los widgets premium individuales) -->
-<script defer src="js/34-premium-suite.js" integrity="sha384-42MMXQCgsqL/nVN6Upw3jc3IJ9eUGjMzapDDXfjdlmX3aaOExeE3tRZ2x5yMRuzl" crossorigin="anonymous"></script>
+<!-- pro-features/wav-encoder.js cargado ANTES de 34-premium-suite (consume window.LGMDM.codec.* para codificación WAV). -->
+<script defer src="js/pro-features/wav-encoder.js" integrity="sha384-bF8Yrhv0+rlrrDbVxbHeLY+tz1M2N86hleGMqBfHF0G9wZo2l7Pmyuua6DVyzmSy" crossorigin="anonymous"></script>
+<!-- pro-features/premium-utils.js cargado ANTES de 34-premium-suite (consume window.LGMDM.premiumUtils.* para pearsonCorrelation + demask settings). -->
+<script defer src="js/pro-features/premium-utils.js" integrity="sha384-YqEGNM0JuBMjxIA16TagRg1Epa9zpQERszYWBg0eIAl/gMo5Ig/TFNM9nEWG5hc4" crossorigin="anonymous"></script>
+<script defer src="js/34-premium-suite.js" integrity="sha384-kxo/+z//2w0HywV+VQftCKzTYqPPa0fyGs3YdcVQu56o9r8dHuV40X7k+R6kBOXQ" crossorigin="anonymous"></script>
 <script defer src="js/insert-base.js" integrity="sha384-GkDTdTseDL5bXXxvSs1d39r3BLI/gylB+ZVEfRLNngyr865rU8EYxKBVEw0C/kfZ" crossorigin="anonymous"></script>
 <script defer src="js/pro-insert-rack.js" integrity="sha384-vlxQt0kHw3VVkog3GWJgDDU1SRe3Ub9zvJXAcxwnQgOXVqNeNerAZoFfTryZuJ5y" crossorigin="anonymous"></script>
 <script defer src="js/reference-library-picker.js" integrity="sha384-jqtp0qCtEb0p4R4GzDSW67lmbktdCumT109Ve8gYX/5AU5pz5B1yn9b4MHlcWGOp" crossorigin="anonymous"></script>

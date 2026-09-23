@@ -14,8 +14,6 @@
   const getSelectedFile = () => (typeof LGMDM !== 'undefined' && LGMDM.state?.getSelectedFile?.()) || null;
   const getLastAnalysis = () => (typeof LGMDM !== 'undefined' && LGMDM.state?.getLastAnalysis?.()) || null;
 
-  const STORAGE_KEY_DEMASK = 'lg_premium_demask_settings';
-
   // ── ESTADO DE LA SUITE ───────────────────────────────────────────────
   const state = {
     activeTab: 'compliance',
@@ -64,21 +62,12 @@
   const _bandSpecs = _audioTap.bandSpecs;
 
   // Correlación Pearson sobre vectores de [-1..1]. Barata: O(n) con n ≤ 512.
-  function pearsonCorrelation(x, y) {
-    const n = Math.min(x.length, y.length);
-    if (n < 2) return 0;
-    let sx = 0, sy = 0, sxy = 0, sxx = 0, syy = 0;
-    for (let i = 0; i < n; i++) {
-      const xi = x[i], yi = y[i];
-      sx += xi; sy += yi;
-      sxy += xi * yi;
-      sxx += xi * xi;
-      syy += yi * yi;
-    }
-    const denom = Math.sqrt((n * sxx - sx * sx) * (n * syy - sy * sy));
-    if (!Number.isFinite(denom) || denom === 0) return 0;
-    return (n * sxy - sx * sy) / denom;
-  }
+  // pearsonCorrelation + loadDemaskSettings + saveDemaskSettings movidos a
+  // pro-features/premium-utils.js (split JS-I-3). Consumimos via
+  // window.LGMDM.premiumUtils.* — ver premium-utils.js.
+  const pearsonCorrelation = window.LGMDM?.premiumUtils?.pearsonCorrelation;
+  const loadDemaskSettings = window.LGMDM?.premiumUtils?.loadDemaskSettings;
+  const saveDemaskSettings = window.LGMDM?.premiumUtils?.saveDemaskSettings;
 
   // Gradient azul (silencio) → cyan (medio, --accent) → rojo (clipping, --danger).
   // F5.10 — LUT pre-computada 256×1 (offscreen canvas) para que el waterfall
@@ -230,31 +219,8 @@
     }
   }
 
-  function loadDemaskSettings() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY_DEMASK);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Number.isFinite(Number(parsed.kickDepth))) {
-          state.demask.kickDepth = Math.max(0, Math.min(100, Number(parsed.kickDepth)));
-        }
-        if (Number.isFinite(Number(parsed.voxDepth))) {
-          state.demask.voxDepth = Math.max(0, Math.min(100, Number(parsed.voxDepth)));
-        }
-      } else {
-        const k = localStorage.getItem('lg_demask_kick');
-        const v = localStorage.getItem('lg_demask_vox');
-        if (Number.isFinite(Number(k))) state.demask.kickDepth = Math.max(0, Math.min(100, Number(k)));
-        if (Number.isFinite(Number(v))) state.demask.voxDepth = Math.max(0, Math.min(100, Number(v)));
-      }
-    } catch (_) {}
-  }
-
-  function saveDemaskSettings() {
-    try {
-      localStorage.setItem(STORAGE_KEY_DEMASK, JSON.stringify(state.demask));
-    } catch (_) {}
-  }
+  // loadDemaskSettings / saveDemaskSettings definidos arriba (consume
+  // window.LGMDM.premiumUtils).
 
   // ── PLATAFORMAS Y ESTÁNDARES DE CUMPLIMIENTO ────────────────────────
   const PLATFORMS = [
@@ -1135,77 +1101,11 @@
 
   // Encoder WAV PCM 16-bit a partir de un AudioBuffer (interleaved estéreo).
   // Sin dependencias externas. Devuelve un Blob 'audio/wav'.
-  function audioBufferToWavBlob(audioBuffer, bitDepth = 16) {
-    const numCh = audioBuffer.numberOfChannels;
-    const sampleRate = audioBuffer.sampleRate;
-    const numFrames = audioBuffer.length;
-    const bytesPerSample = bitDepth / 8;
-    const blockAlign = numCh * bytesPerSample;
-    const dataBytes = numFrames * blockAlign;
-    const headerBytes = 44;
-    const buffer = new ArrayBuffer(headerBytes + dataBytes);
-    const view = new DataView(buffer);
-
-    // RIFF header
-    writeString(view, 0, 'RIFF');
-    view.setUint32(4, 36 + dataBytes, true);
-    writeString(view, 8, 'WAVE');
-    writeString(view, 12, 'fmt ');
-    view.setUint32(16, 16, true);             // PCM chunk size
-    view.setUint16(20, 1, true);              // PCM format
-    view.setUint16(22, numCh, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * blockAlign, true);  // byte rate
-    view.setUint16(32, blockAlign, true);
-    view.setUint16(34, bitDepth, true);
-    writeString(view, 36, 'data');
-    view.setUint32(40, dataBytes, true);
-
-    // Interleaved PCM samples
-    const channels = [];
-    for (let c = 0; c < numCh; c++) channels.push(audioBuffer.getChannelData(c));
-    let offset = headerBytes;
-    const maxAmp = bitDepth === 16 ? 0x7fff : 0x7fffff;
-    for (let i = 0; i < numFrames; i++) {
-      for (let c = 0; c < numCh; c++) {
-        const s = Math.max(-1, Math.min(1, channels[c][i]));
-        // Asimétrico (signed PCM) — el driver rechaza [-1] exacto en 16-bit
-        const val = Math.round(s < 0 ? s * maxAmp : s * (maxAmp - 1));
-        if (bitDepth === 16) {
-          view.setInt16(offset, val, true);
-          offset += 2;
-        } else {
-          view.setInt32(offset, val, true);
-          offset += 4;
-        }
-      }
-    }
-    return new Blob([view], { type: 'audio/wav' });
-  }
-  function writeString(view, offset, str) {
-    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
-  }
-
-  // Cuenta "inter-sample peaks" > 0 dBFS (penalty artificial por códec).
-  // Para un WAV renderizado por OfflineAudioContext, los samples quedan en
-  // [-1..1]; los que están exactamente en +1 ya son clipping. Sumamos el
-  // penalty configurable del códec para reflejar los inter-sample peaks
-  // que el códec real podría producir tras el re-encoding.
-  function countInterSamplePeaks(audioBuffer, penaltyDb) {
-    let count = 0;
-    const channels = audioBuffer.numberOfChannels;
-    for (let c = 0; c < channels; c++) {
-      const data = audioBuffer.getChannelData(c);
-      for (let i = 0; i < data.length; i++) {
-        if (data[i] >= 1.0) count++;
-      }
-    }
-    // Aplicamos un factor empírico: penalty 1dB ⇒ ~0.5% más de picos ISP
-    // sobre el total de samples (heurística, no medición real).
-    const total = audioBuffer.length * channels;
-    const extra = Math.round(total * 0.005 * Math.max(0, penaltyDb));
-    return count + extra;
-  }
+  // audioBufferToWavBlob + writeString + countInterSamplePeaks movidos a
+  // pro-features/wav-encoder.js (split JS-I-3). Consumimos via
+  // window.LGMDM.codec.* — ver wav-encoder.js.
+  const audioBufferToWavBlob = window.LGMDM?.codec?.audioBufferToWavBlob;
+  const countInterSamplePeaks = window.LGMDM?.codec?.countInterSamplePeaks;
 
   // RMS en dBFS sobre todo el buffer (para mostrar LUFS estimado en UI).
   function rmsDbfs(audioBuffer) {
@@ -1659,7 +1559,7 @@
   // renderDemaskTab — Tab 7: Spectral cross-demasking (kick vs bass / vox)
   // ================================================================
   function renderDemaskTab(container) {
-    loadDemaskSettings();
+    loadDemaskSettings(state);
 
     container.innerHTML = `
       <div>
@@ -1730,17 +1630,17 @@
       const val = Number(e.target.value);
       state.demask.kickDepth = val;
       updateKick(val);
-      saveDemaskSettings();
+      saveDemaskSettings(state);
     });
     el('demaskVoxDepth')?.addEventListener('input', (e) => {
       const val = Number(e.target.value);
       state.demask.voxDepth = val;
       updateVox(val);
-      saveDemaskSettings();
+      saveDemaskSettings(state);
     });
 
     el('btnApplyDemask')?.addEventListener('click', () => {
-      saveDemaskSettings();
+      saveDemaskSettings(state);
       LGMDM.ui?.showToast?.('Parámetros de desmascaramiento guardados', 'success', 2500);
     });
 
@@ -3210,7 +3110,7 @@
   function init() {
     if (_initDone) return;
     _initDone = true;
-    loadDemaskSettings();
+    loadDemaskSettings(state);
     ensureModal();
 
     // Re-render when analysis completes in the background
