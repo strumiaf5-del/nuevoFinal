@@ -99,7 +99,7 @@ RSYNC_ARGS=(
     --exclude='tmp/**'
     --exclude='*.log'
     --exclude='.cache/**'
-    --exclude='tools/**'           # scripts dev (regen-sri etc) — no va al docroot
+    --exclude='tools/'             # scripts dev — no va al docroot
 )
 
 if [[ $DELETE -eq 1 ]]; then
