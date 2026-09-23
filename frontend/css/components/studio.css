@@ -9,7 +9,7 @@
 .lg-studio-column {
   min-width: 0;
   background: linear-gradient(180deg, rgba(18, 21, 27, .98), rgba(11, 13, 17, .98));
-  border: 1px solid rgba(255, 255, 255, .08);
+  border: 1px solid color-mix(in srgb, #ffffff 8%, transparent);
   border-radius: 14px;
   box-shadow: 0 12px 34px rgba(0, 0, 0, .24);
 }
@@ -46,7 +46,7 @@
 }
 
 .studio-family {
-  border-top: 1px solid rgba(255, 255, 255, .06);
+  border-top: 1px solid color-mix(in srgb, #ffffff 6%, transparent);
   padding: 10px 0 4px;
 }
 
@@ -83,8 +83,8 @@
 }
 
 .studio-plugin-toggle:hover {
-  background: rgba(255, 255, 255, .03);
-  border-color: rgba(255, 255, 255, .06);
+  background: color-mix(in srgb, #ffffff 3%, transparent);
+  border-color: color-mix(in srgb, #ffffff 6%, transparent);
 }
 
 .studio-plugin-toggle.active {
@@ -118,12 +118,12 @@
 }
 
 .studio-plugin-toggle.active .studio-plugin-led {
-  background: #69e4ae;
+  background: var(--ui-good);
   box-shadow: 0 0 10px rgba(105, 228, 174, .55);
 }
 
 .studio-center-surface {
-  border: 1px solid rgba(255, 255, 255, .07);
+  border: 1px solid color-mix(in srgb, #ffffff 7%, transparent);
   border-radius: 12px;
   padding: 12px;
   background: rgba(7, 9, 12, .34);
@@ -152,7 +152,7 @@
   gap: 7px;
   padding: 7px 9px;
   background: #13171d;
-  border: 1px solid rgba(255, 255, 255, .07);
+  border: 1px solid color-mix(in srgb, #ffffff 7%, transparent);
   border-radius: 8px;
   color: #cbd2db;
   font: 700 9px ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -175,9 +175,9 @@
 
 .studio-gr-card {
   padding: 10px;
-  border: 1px solid rgba(255, 255, 255, .07);
+  border: 1px solid color-mix(in srgb, #ffffff 7%, transparent);
   border-radius: 10px;
-  background: rgba(255, 255, 255, .02);
+  background: color-mix(in srgb, #ffffff 2%, transparent);
 }
 
 .studio-gr-top {
@@ -203,7 +203,7 @@
 .studio-gr-bar {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, #69e4ae, #e7d36c, #f47a72);
+  background: linear-gradient(90deg, var(--ui-good), #e7d36c, #f47a72);
   transition: width 80ms linear;
 }
 
@@ -215,7 +215,7 @@
 
 .studio-telemetry-empty {
   padding: 14px;
-  border: 1px dashed rgba(255, 255, 255, .1);
+  border: 1px dashed color-mix(in srgb, #ffffff 10%, transparent);
   border-radius: 10px;
   color: #77818f;
   font-size: 10px;
@@ -240,7 +240,7 @@
 }
 
 .studio-plugin-card {
-  border: 1px solid rgba(255, 255, 255, .08);
+  border: 1px solid color-mix(in srgb, #ffffff 8%, transparent);
   border-radius: 10px;
   background: #101419;
   margin-bottom: 7px;
@@ -289,7 +289,7 @@
 }
 
 .studio-plugin-body {
-  border-top: 1px solid rgba(255, 255, 255, .06);
+  border-top: 1px solid color-mix(in srgb, #ffffff 6%, transparent);
   padding: 10px;
 }
 
@@ -326,7 +326,7 @@
 
 .studio-band-tab {
   padding: 7px 4px;
-  border: 1px solid rgba(255, 255, 255, .07);
+  border: 1px solid color-mix(in srgb, #ffffff 7%, transparent);
   background: #151a20;
   color: #7f8894;
   border-radius: 7px;
@@ -343,7 +343,7 @@
 .studio-band-state-hint {
   padding: 8px;
   border-radius: 7px;
-  background: rgba(255, 255, 255, .025);
+  background: color-mix(in srgb, #ffffff 2%, transparent);
   color: #747f8e;
   font: 500 9px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
@@ -353,12 +353,12 @@
   gap: 6px;
   margin-top: 9px;
   padding-top: 8px;
-  border-top: 1px solid rgba(255, 255, 255, .05);
+  border-top: 1px solid color-mix(in srgb, #ffffff 5%, transparent);
 }
 
 .studio-action-btn {
   flex: 1;
-  border: 1px solid rgba(255, 255, 255, .08);
+  border: 1px solid color-mix(in srgb, #ffffff 8%, transparent);
   background: #171c23;
   color: #b7c0cb;
   border-radius: 7px;
@@ -374,7 +374,7 @@
 .studio-add-plugin {
   width: 100%;
   padding: 10px;
-  border: 1px dashed rgba(255, 255, 255, .12);
+  border: 1px dashed color-mix(in srgb, #ffffff 12%, transparent);
   border-radius: 9px;
   background: transparent;
   color: #77818e;

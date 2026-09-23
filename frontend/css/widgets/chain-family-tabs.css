@@ -4,8 +4,7 @@
    Resuelve MX-04 (CSS inexistente para chain-family-tabs).
    ════════════════════════════════════════════════════════════════ */
 
-@layer sidebar {
-  .chain-family-tabs {
+.chain-family-tabs {
     display: flex;
     gap: 4px;
     padding: 6px 8px;
@@ -73,7 +72,6 @@
     min-width: 80px;
     padding: 6px 10px;
   }
-}
 
 /* Toggle button para activar/desactivar R2 (sticky en la sidebar) */
 .chain-r2-toggle {
@@ -82,7 +80,7 @@
   align-items: center;
   gap: 6px;
   font-size: var(--space-3);
-  color: var(--ui-muted, #94a3b8);
+  color: var(--ui-muted, var(--ui-muted));
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
