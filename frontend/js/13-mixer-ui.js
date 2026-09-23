@@ -1634,18 +1634,13 @@ function requireChannelChild(parent, selector, owner) {
   }
 
   function activateMixerMode() {
-    const shell  = document.querySelector('.content-shell');
-    const mixArea = getMixerContentArea();
     const cont   = document.getElementById('sidebarPaneContainer');
     if (cont) {
       cont.className = cont.className.replace(/sidebar-showing-\w+/g,'').trim();
       cont.classList.add('sidebar-showing-mixer');
     }
-    shell?.querySelectorAll(':scope>*:not(#mixerContentArea)').forEach(el => {
-      el._pd = el.style.display; el.style.display='none';
-    });
+    const mixArea = getMixerContentArea();
     if (mixArea) {
-      mixArea.style.display = 'flex';
       if (!mixArea.firstChild) renderMixer();
       bindMixerEvents();
       refreshStemLibrary(false);
@@ -1655,12 +1650,6 @@ function requireChannelChild(parent, selector, owner) {
   }
 
   function deactivateMixerMode() {
-    const shell  = document.querySelector('.content-shell');
-    const mixArea = getMixerContentArea();
-    shell?.querySelectorAll(':scope>*:not(#mixerContentArea)').forEach(el => {
-      el.style.display = el._pd !== undefined ? el._pd : '';
-    });
-    if (mixArea) mixArea.style.display='none';
     document.querySelector('.content')?.classList.remove('content--mixer');
     document.body.classList.remove('mode-mixer');
     if (previewEngine.playing) stopPreview(false);

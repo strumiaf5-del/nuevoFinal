@@ -176,6 +176,58 @@
   }
   LG.errors = Object.assign(LG.errors || {}, { handleClientError });
 
+  // ── Global Playback Arbiter ──────────────────────────────────────────────
+  // Coordinates playback across preview controller, HTML5 <audio>, and Web Audio
+  // to avoid overlapping audio streams and double-playback collisions.
+  let _stoppingPlayback = false;
+  function stopAllPlayback(exceptElement) {
+    if (_stoppingPlayback) return;
+    _stoppingPlayback = true;
+    try {
+      // 1. Pause HTML5 audio elements
+      document.querySelectorAll('audio').forEach((a) => {
+        if (a !== exceptElement && !a.paused) {
+          try { a.pause(); } catch (_) {}
+        }
+      });
+      // 2. Stop competing players (keep the one that just started)
+      const previewAudio = document.querySelector('#previewAudioWrap audio');
+      try {
+        if (exceptElement !== previewAudio) {
+          LG.ab?.stop?.();
+          LG.previewController?.stop?.();
+          LG.reference?.stopRefPreview?.();
+          LG.mixer?.stopPreview?.(true);
+        } else {
+          // Preview is the active player: only tear down A/B + reference
+          LG.ab?.stop?.();
+          LG.reference?.stopRefPreview?.();
+        }
+      } catch (_) {}
+      // 3. Reset console play button if console preview is not the playing element
+      if (exceptElement !== previewAudio) {
+        const consolePb = document.getElementById('consolePlayBtn');
+        if (consolePb) {
+          consolePb.textContent = '▶';
+          consolePb.setAttribute('aria-pressed', 'false');
+        }
+        if (LG.console?.state) LG.console.state.playing = false;
+      }
+      global.dispatchEvent(new CustomEvent('lgmdm:playback-stopped', { detail: { except: exceptElement || null } }));
+    } finally {
+      _stoppingPlayback = false;
+    }
+  }
+
+  // Intercept any <audio> play event in capture phase to stop competing players
+  document.addEventListener('play', (e) => {
+    if (e.target && e.target.tagName === 'AUDIO') {
+      stopAllPlayback(e.target);
+    }
+  }, true);
+
+  LG.playback = Object.assign(LG.playback || {}, { stopAll: stopAllPlayback });
+
   window.bindOnce = bindOnce;
   if (document.readyState === 'loading') bindOnce(document, 'DOMContentLoaded', initDeclarativeControls, 'ui-declarative-dom-ready', { once: true });
   else initDeclarativeControls();

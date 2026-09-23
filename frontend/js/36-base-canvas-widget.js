@@ -46,6 +46,11 @@
       this._dpr = 1;
     }
 
+    // Subclasses (saturation, phase-rotation, ms-imager…) leen this.canvas /
+    // this.ctx en onResize/onInit. Los getters exponen los #privados del base.
+    get canvas() { return this.#canvas; }
+    get ctx() { return this.#ctx; }
+
     _size(canvas) {
       const rect = canvas.getBoundingClientRect();
       this.#cssWidth = Math.max(rect.width, 320);

@@ -239,7 +239,10 @@ async function _handleAnalyzeClick() {
   try {
     const data = await LGMDM.analysis.request();
     if (!data) return;
-    window.LGMDM.workspace?.setWorkspace?.("analysis");
+    const currentWs = document.body?.dataset?.workspace || window.LGMDM.workspace?.getCurrent?.();
+    if (currentWs !== "console") {
+      window.LGMDM.workspace?.setWorkspace?.("analysis");
+    }
   } catch (e) {
     if (e?.name === 'AbortError') {
       console.debug('[analyze] cancelado por el usuario:', e);
@@ -442,7 +445,11 @@ function startPolling(jobId) {
         clearInterval(window.LGMDM.state.masteringPollInterval);
         LGMDM.ui.showStatus(null, "Mastering completado ✓", "done");
         document.getElementById("btnMaster")?.removeAttribute("disabled");
-        window.LGMDM.state.downloadUrl = `${LGMDM.api.apiBase()}/download/${jobId}`;
+        const finalUrl = `${LGMDM.api.apiBase()}/download/${jobId}`;
+        if (!window.LGMDM.state.jobs) window.LGMDM.state.jobs = { mastering: {}, reference: {} };
+        if (!window.LGMDM.state.jobs.mastering) window.LGMDM.state.jobs.mastering = {};
+        window.LGMDM.state.jobs.mastering.downloadUrl = finalUrl;
+        window.LGMDM.state.downloadUrl = finalUrl;
         const btn = document.getElementById("btnDownload");
         if (btn) btn.style.display = "block";
 
@@ -463,14 +470,18 @@ function startPolling(jobId) {
         const nameInput = document.getElementById("trackNameInput");
         if (nameInput) nameInput.style.display = "block";
         prefillTrackNameFromFile();
+        window.LGMDM.state.downloadFilename = "mastered.wav";
+        window.LGMDM.state.activeJobType = "mastering";
         if (btn) LGMDM.ui.bindOnce(btn, "click", async () => {
           try {
             btn.disabled = true;
-            await LGMDM.api.downloadAuthenticated(window.LGMDM.state.downloadUrl + currentTrackNameParam(), { filename: "mastered.wav" });
+            const dlUrl = window.LGMDM.state.downloadUrl;
+            const filename = window.LGMDM.state.downloadFilename || (window.LGMDM.state.activeJobType === "reference" ? "reference-master.wav" : "mastered.wav");
+            await LGMDM.api.downloadAuthenticated(dlUrl + currentTrackNameParam(), { filename });
           } catch (e) {
             window.LGMDM.ui.showToast?.(e.message || "No se pudo descargar el master.", "error");
           } finally { btn.disabled = false; }
-        }, "master-download");
+        }, "app-master-download");
         const rBtn = document.getElementById("btnReport");
         if (rBtn) {
           rBtn.style.display = "block";

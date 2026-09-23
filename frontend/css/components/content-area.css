@@ -21,6 +21,14 @@ CONTENT AREA
     margin: 0 auto;
   }
 
+  /* ── Mixer Mode Display Harmonization ── */
+  body.mode-mixer .content-shell > *:not(#mixerContentArea) {
+    display: none !important;
+  }
+  body.mode-mixer #mixerContentArea {
+    display: flex !important;
+  }
+
   /* ── Hero panel ── */
   .workflow-hero {
     background: radial-gradient(circle at 20% 40%, color-mix(in srgb, var(--ui-warm) 12%, transparent), transparent 35%),

@@ -2,6 +2,10 @@
 // 06-params-builder.js — Armado de parámetros y vista previa antes de masterizar
 // ============================================================
 (function () {
+      function getParamVal(id) {
+        const el = LGMDM.dom.requireById(id, "06-params-builder.js");
+        return (el.dataset && el.dataset.consoleSaved != null) ? el.dataset.consoleSaved : el.value;
+      }
       function collectMasterParamsObj() {
         const platform = LGMDM.dom.requireById("s-platform", "06-params-builder.js").value;
         const obj = {
@@ -14,8 +18,8 @@
           // (ver 08-reference-mastering.js) — ahora también disponible acá.
           adaptive_loudness_weighting: LGMDM.dom.byId("s-uselufs-adaptive")?.checked ?? false,
           loudness_sensitivity_amount: ((parseFloat(LGMDM.dom.byId("s-uselufs-sensitivity")?.value || "65") / 100)).toFixed(2),
-          comp_threshold_db: LGMDM.dom.requireById("s-thresh", "06-params-builder.js").value,
-          comp_ratio: LGMDM.dom.requireById("s-ratio", "06-params-builder.js").value,
+          comp_threshold_db: getParamVal("s-thresh"),
+          comp_ratio: getParamVal("s-ratio"),
           comp_attack_ms: LGMDM.dom.requireById("s-cattack", "06-params-builder.js").value,
           comp_release_ms: LGMDM.dom.requireById("s-crelease", "06-params-builder.js").value,
           comp_makeup_db: LGMDM.dom.requireById("s-cmakeup", "06-params-builder.js").value,
@@ -70,13 +74,13 @@
           saturation_mix: LGMDM.dom.requireById("s-satmix", "06-params-builder.js").value,
           mid_gain_db: LGMDM.dom.requireById("s-mgain", "06-params-builder.js").value,
           side_gain_db: LGMDM.dom.requireById("s-sgain", "06-params-builder.js").value,
-          stereo_width_amount: LGMDM.dom.requireById("s-width", "06-params-builder.js").value,
+          stereo_width_amount: getParamVal("s-width"),
           use_stereo_enhancer: LGMDM.dom.requireById("s-enhancer", "06-params-builder.js").checked,
           haas_delay_ms: LGMDM.dom.requireById("s-haas", "06-params-builder.js").value,
           enhancer_bass_mono_freq: LGMDM.dom.requireById("s-bassmono", "06-params-builder.js").value,
           reverb_size: LGMDM.dom.requireById("s-rsize", "06-params-builder.js").value,
           reverb_wet: LGMDM.dom.requireById("s-rwet", "06-params-builder.js").value,
-          limiter_ceiling: LGMDM.dom.requireById("s-ceiling", "06-params-builder.js").value,
+          limiter_ceiling: getParamVal("s-ceiling"),
           limiter_release_ms: LGMDM.dom.requireById("s-lrelease", "06-params-builder.js").value,
           output_format: LGMDM.dom.requireById("s-format", "06-params-builder.js").value,
           output_bit_depth: LGMDM.dom.requireById("s-bitdepth", "06-params-builder.js").value,

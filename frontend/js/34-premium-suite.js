@@ -9,7 +9,7 @@
   'use strict';
 
   const LG = global.LGMDM = global.LGMDM || {};
-  const el = (id) => document.getElementById(id);
+  const el = (id) => document.getElementById(id) || document.querySelector(`[data-status-id="${id}"]`);
   const escapeHtml = LG.ui?.escapeHtml || ((str) => String(str ?? '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])));
   // Audit C: state getters centralizados en window.LGMDM.stateHelpers
   // (00-state-helpers.js). Antes: wrappers locales de 2 líneas duplicados
@@ -273,8 +273,8 @@
       'doctor':           (c) => renderDoctorTab(c, { lufs, tp, lra, isLive }),
       'demask':           (c) => renderDemaskTab(c),
       'tamer':            (c) => renderTamerTab(c),
-      'warmer':           (c) => renderWarmerTab(c),
-      'matcheq':          (c) => renderMatchEqTab(c),
+      'warmer':           (c) => renderSaturationTab(c),
+      'matcheq':          (c) => renderReferenceMatchTab(c),
       'phantomsub':       (c) => renderPhantomSubTab(c),
       'stemsep':          (c) => renderStemSepTab(c),
       'loudness-penalty': (c) => renderLoudnessPenaltyTab(c),
@@ -2452,7 +2452,9 @@
   // Helper compartido: construye el patrón "canvas + controls" de cada panel.
   // Devuelve el HTML para que cada render function lo inyecte en container.innerHTML.
   function _proPanelShell(tabId, title, subtitle, leftExtraHtml) {
-    const filePicker = `${tabId.replace(/-([a-z])/g, (_, c) => c.toUpperCase())}File`;
+    const camelBase = tabId.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+    const filePicker = `${camelBase}File`;
+    const statusId = `${camelBase}Status`;
     return `
       <div>
         <h4 class="pro-h4-accent">${title}</h4>
@@ -2475,7 +2477,7 @@
               <canvas id="${tabId}Canvas" class="pro-widget-canvas" width="640" height="320"></canvas>
               <div class="controls" id="${tabId}Controls"></div>
             </div>
-            <div id="${tabId}Status" class="pro-status"></div>
+            <div id="${statusId}" data-status-id="${tabId}Status" class="pro-status"></div>
           </div>
         </div>
       </div>

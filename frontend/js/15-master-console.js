@@ -329,30 +329,41 @@
     LGMDM.dom.byId('consoleTrackMeta')?.replaceChildren(document.createTextNode(`${file.type||'audio'} · ${(file.size/1024/1024).toFixed(1)} MB`));
     setStatus('Audio cargado · listo para analizar',true);
   }
-  // Re-entry guards (MX-13). Both syncMetersFromDom and syncChainMeters can be
-  // invoked multiple times per frame: syncMetersFromDom from the rAF tick at
-  // ~16ms when workspace=console, and syncChainMeters from the LGMDM.metrics
-  // subscriber (which can fire every preview tick). JS is single-threaded, so
-  // the worst case is duplicated work + "last-call-wins"; coalesce via guard +
-  // queueMicrotask so we collapse bursts into one re-execution.
+  // Re-entry guards (MX-13). syncChainMeters can be invoked multiple times per
+  // frame: from updateConsoleMetrics (metrics subscriber) which can fire every
+  // preview tick. JS is single-threaded, so the worst case is duplicated work +
+  // "last-call-wins"; coalesce via guard + queueMicrotask so we collapse bursts
+  // into one re-execution.
   let _metersSyncInFlight = false;
   let _metersSyncPending = false;
   let _lastMetrics = null;
 
-  function syncMetersFromDom(){
-    if (_metersSyncInFlight) { _metersSyncPending = true; return; }
-    _metersSyncInFlight = true;
-    try {
-      const map=[['meterPeakReadout','consolePeak'],['meterLufsReadout','consoleLufs'],['meterTruePeakReadout','consoleTruePeak'],['meterRmsReadout','consoleRms'],['stereoMeterReadout','consoleCorr']];
-      for(const [src,dst] of map){const a=LGMDM.dom.byId(src),b=LGMDM.dom.byId(dst);if(a&&b&&a.textContent)b.textContent=a.textContent.replace(/^corr:\s*/i,'');}
-      updateConsoleStereoVu();
-    } finally {
-      _metersSyncInFlight = false;
-      if (_metersSyncPending) {
-        _metersSyncPending = false;
-        queueMicrotask(syncMetersFromDom);
-      }
-    }
+  function updateConsoleMetrics(metrics) {
+    if (!metrics) return;
+    state.metrics = metrics;
+    const peak = Number(metrics.peak_db);
+    const rms = Number(metrics.rms_db);
+    const lufs = Number(metrics.lufs_momentary ?? metrics.lufs);
+    const truePeak = Number(metrics.true_peak_db);
+    const corr = Number(metrics.stereo_correlation);
+
+    const pEl = LGMDM.dom.byId('consolePeak');
+    if (pEl && Number.isFinite(peak)) pEl.textContent = `${peak.toFixed(1)} dB`;
+
+    const lEl = LGMDM.dom.byId('consoleLufs');
+    if (lEl && Number.isFinite(lufs)) lEl.textContent = `${lufs.toFixed(1)} LUFS`;
+
+    const tpEl = LGMDM.dom.byId('consoleTruePeak');
+    if (tpEl && Number.isFinite(truePeak)) tpEl.textContent = `${truePeak.toFixed(1)} dBTP`;
+
+    const rEl = LGMDM.dom.byId('consoleRms');
+    if (rEl && Number.isFinite(rms)) rEl.textContent = `${rms.toFixed(1)} dB`;
+
+    const cEl = LGMDM.dom.byId('consoleCorr');
+    if (cEl && Number.isFinite(corr)) cEl.textContent = `${corr.toFixed(2)}`;
+
+    updateConsoleStereoVu();
+    syncChainMeters(metrics);
   }
 
   function syncChainMeters(metrics){
@@ -458,7 +469,7 @@
         return;
       }
       const onConsole = document.body.dataset.workspace === "console";
-      if(onConsole){ drawWaveform(); syncMetersFromDom(); drawConsoleSpectrum(); drawWaterfall(); }
+      if(onConsole){ drawWaveform(); updateConsoleStereoVu(); drawConsoleSpectrum(); drawWaterfall(); }
       state.audio=getPreviewAudio();
       const audio=state.audio;
       if (audio && onConsole) {
@@ -475,8 +486,7 @@
     if (metricsStore) {
       state.unsubscribeMetrics?.();
       state.unsubscribeMetrics = metricsStore.subscribe(({ metrics }) => {
-        state.metrics = metrics || null;
-        root.masterConsole.syncChainMeters?.(metrics);
+        updateConsoleMetrics(metrics);
       });
     }
   }
@@ -498,6 +508,7 @@
         if (stage === 'limiter') el.value = '0.999';
       } else if (el.dataset.consoleSaved != null) {
         el.value = el.dataset.consoleSaved;
+        delete el.dataset.consoleSaved;
       }
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });

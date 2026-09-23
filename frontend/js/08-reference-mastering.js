@@ -541,23 +541,28 @@ function startReferencePolling(jobId) {
         clearInterval(window.LGMDM.state.referencePollInterval);
         LGMDM.ui.showStatus(null, "Masterizado por referencia ✓", "done");
         LGMDM.dom.requireById("btnMasterRef", "08-reference-mastering").disabled = false;
-        window.LGMDM.state.downloadUrl = `${LGMDM.api.apiBase()}/download/${jobId}`;
+        const refUrl = `${LGMDM.api.apiBase()}/download/${jobId}`;
+        if (!window.LGMDM.state.jobs) window.LGMDM.state.jobs = { mastering: {}, reference: {} };
+        if (!window.LGMDM.state.jobs.reference) window.LGMDM.state.jobs.reference = {};
+        window.LGMDM.state.jobs.reference.downloadUrl = refUrl;
+        window.LGMDM.state.downloadUrl = refUrl;
         const btn = LGMDM.dom.requireById("btnDownload", "08-reference-mastering");
         btn.style.display = "block";
         const nameInput = LGMDM.dom.requireById("trackNameInput", "08-reference-mastering");
         nameInput.style.display = "block";
         prefillTrackNameFromFile();
-        if (!btn.dataset.refDownloadWired) {
-          btn.dataset.refDownloadWired = "true";
-          btn.addEventListener("click", async () => {
-            try {
-              btn.disabled = true;
-              await LGMDM.api.downloadAuthenticated(window.LGMDM.state.downloadUrl + currentTrackNameParam(), { filename: "reference-master.wav" });
-            } catch (e) {
-              LGMDM.errors.handleClientError(e, "No se pudo descargar el master de referencia.", { context: "reference-download" });
-            } finally { btn.disabled = false; }
-          });
-        }
+        window.LGMDM.state.downloadFilename = "reference-master.wav";
+        window.LGMDM.state.activeJobType = "reference";
+        if (btn) LGMDM.ui.bindOnce(btn, "click", async () => {
+          try {
+            btn.disabled = true;
+            const dlUrl = window.LGMDM.state.downloadUrl;
+            const filename = window.LGMDM.state.downloadFilename || (window.LGMDM.state.activeJobType === "reference" ? "reference-master.wav" : "mastered.wav");
+            await LGMDM.api.downloadAuthenticated(dlUrl + currentTrackNameParam(), { filename });
+          } catch (e) {
+            LGMDM.errors.handleClientError(e, "No se pudo descargar el master de referencia.", { context: "reference-download" });
+          } finally { btn.disabled = false; }
+        }, "app-master-download");
 
         let _refAbBtn = document.getElementById("btnRefAB");
         if (!_refAbBtn) {
