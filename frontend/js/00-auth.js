@@ -412,10 +412,12 @@
           hideAuthOverlay();
           return;
         }
+        console.warn('[auth] /auth/me devolvió', res.status, '- redirigiendo a login');
         clearSession();
         window.location.replace('login.html');
       })
-      .catch(() => {
+      .catch(err => {
+        console.error('[auth] /auth/me falló (no llegó al server):', err?.message || err);
         clearSession();
         window.location.replace('login.html');
       });

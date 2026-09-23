@@ -227,13 +227,12 @@ def set_auth_cookie(response: Response, token: str, secure: bool = True) -> None
     en localhost (HTTP) lo apagamos para que browser la acepte; en
     producción (HTTPS) Secure=True.
 
-    SameSite: duckdns.org está en el Public Suffix List, así que
-    masteringstudio.duckdns.org y masteringstudio-api.duckdns.org son
-    "cross-site" entre sí — SameSite=Strict/Lax NO mandaría la cookie en
-    fetch/XHR cross-origin. En producción (secure=True) usamos None;
-    en dev localhost (secure=False) SameSite=None sin Secure lo rechaza
-    el browser, y localhost:80 → localhost:8000 es same-site (host igual,
-    puerto irrelevante para site), así que Lax alcanza."""
+    SameSite: producción sirve la API bajo /api en el MISMO origin que el
+    frontend (Caddy handle_path → reverse_proxy), así que la cookie es
+    first-party → Lax alcanza y es más seguro que None (restringe envío
+    cross-site). En dev localhost:80 → localhost:8000 es same-site (host
+    igual, puerto irrelevante), también Lax. None solo sería necesario si
+    volviéramos a servir la API en un subdominio cross-site."""
     response.set_cookie(
         key=AUTH_COOKIE_NAME,
         value=token,
@@ -241,7 +240,7 @@ def set_auth_cookie(response: Response, token: str, secure: bool = True) -> None
         path="/",
         secure=secure,
         httponly=True,
-        samesite="none" if secure else "lax",
+        samesite="lax",
     )
 
 
@@ -251,7 +250,9 @@ def clear_auth_cookie(response: Response, secure: bool = True) -> None:
         path="/",
         secure=secure,
         httponly=True,
-        samesite="strict",
+        # Mismo samesite que set_auth_cookie — si no, el browser puede no
+        # matchear la cookie a borrar (mismos atributos = delete seguro).
+        samesite="lax",
     )
 
 def get_admin_user(current_user: dict = Depends(get_current_user)) -> dict:

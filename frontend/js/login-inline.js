@@ -5,6 +5,10 @@
       const USER_KEY  = 'master_auth_user';
 
       // 1. Detección automática del origen de la API
+      // Prod: same-origin bajo /api (Caddy handle_path strippea el prefijo
+      // y reverse-proxya al backend). duckdns.org está en el PSL →
+      // subdominios serían cross-site y el browser bloquea third-party
+      // cookies; same-origin lo evita. Dev localhost:8000 directo.
       function getApiBase() {
         try {
           const stored = localStorage.getItem('lgmdm_api_origin');
@@ -13,7 +17,7 @@
         if (typeof location !== 'undefined' && (location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
           return `${location.protocol}//${location.hostname}:8000`;
         }
-        return 'https://masteringstudio-api.duckdns.org';
+        return `${location.origin}/api`;
       }
 
       const API_BASE = getApiBase();

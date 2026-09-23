@@ -48,6 +48,19 @@ class LoginRequest(BaseModel):
     password: str
 
 
+def _request_is_https(request: Request) -> bool:
+    """True si el usuario llegó por HTTPS.
+
+    Detrás de Caddy el backend ve HTTP plano (TLS termina en el proxy):
+    request.url.scheme es 'http' aunque el usuario esté en https://.
+    Caddy setea X-Forwarded-Proto automáticamente en reverse_proxy.
+    Sin este check la cookie salía Secure=false → SameSite=Lax → el
+    browser no la mandaba en el fetch cross-site (duckdns.org PSL) →
+    login 200 pero /auth/me 401 y redirect loop a login."""
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    return proto.lower() == "https"
+
+
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str
@@ -78,9 +91,10 @@ def create_auth_router(*, logger, limiter) -> APIRouter:
     # minuto contra handle_login (PBKDF2 es lento pero la IP sin throttle es
     # gratis). Frena el vector antes de verificar el JWT.
     # SEC-A-01: además del access_token en el body, setea cookie HttpOnly.
-    # SameSite: None en prod (secure=True) porque los subdominios duckdns.org
-    # son cross-site (PSL); Lax en dev localhost. Secure=False en HTTP (localhost
-    # dev), True en producción.
+    # SameSite: Lax — producción sirve la API bajo /api en el mismo origin
+    # que el frontend (proxy de Caddy), así que la cookie es first-party.
+    # Secure=False en HTTP (localhost dev), True en producción (vía
+    # X-Forwarded-Proto, ver _request_is_https).
     @router.post("/auth/login", tags=["Auth"])
     @limiter.limit("5/minute")
     def login(request: Request, response: Response, req: LoginRequest):
@@ -88,8 +102,7 @@ def create_auth_router(*, logger, limiter) -> APIRouter:
             result = handle_login(req.email, req.password)
             token = result.get("access_token")
             if token:
-                is_https = request.url.scheme == "https"
-                set_auth_cookie(response, token, secure=is_https)
+                set_auth_cookie(response, token, secure=_request_is_https(request))
             logger.info(f"🔓 Login exitoso: {req.email}")
             return result
         except HTTPException as exc:
@@ -101,8 +114,7 @@ def create_auth_router(*, logger, limiter) -> APIRouter:
     # sessionStorage en su lado, pero la cookie es server-controlled.
     @router.post("/auth/logout", tags=["Auth"])
     def logout(request: Request, response: Response):
-        is_https = request.url.scheme == "https"
-        clear_auth_cookie(response, secure=is_https)
+        clear_auth_cookie(response, secure=_request_is_https(request))
         logger.info("🚪 Sesión cerrada (cookie limpiada)")
         return {"logged_out": True}
 

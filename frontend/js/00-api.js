@@ -18,7 +18,13 @@
     if (typeof location !== 'undefined' && (location.hostname === '127.0.0.1' || location.hostname === 'localhost')) {
       return `${location.protocol}//${location.hostname}:8000`;
     }
-    return 'https://masteringstudio-api.duckdns.org';
+    // Same-origin: la API vive bajo /api en este mismo host (Caddy
+    // handle_path /api/* → reverse_proxy al backend). duckdns.org está
+    // en el Public Suffix List → subdominios son cross-site y el browser
+    // bloquea third-party cookies; same-origin lo evita.
+    // El /api va AQUÍ (en DEFAULT_API_ORIGIN) para que apiBase() lo
+    // incluya y los ~70 call sites `${apiBase()}/path` funcionen sin cambio.
+    return `${location.origin}/api`;
   })();
   // Si ves errores tipo "Failed to load resource: ... 404" o "mixed content" o
   // URLs apuntando al host equivocado, ejecutá en la consola del navegador:
@@ -28,7 +34,9 @@
     'https://masteringstudio-api.duckdns.org',
     'http://127.0.0.1:8000',
     'http://localhost:8000',
-    DEFAULT_API_ORIGIN
+    // location.origin (same-origin) se permite aparte en normalizeApiOrigin.
+    // DEFAULT_API_ORIGIN puede incluir path (/api) — el check es por origin.
+    (() => { try { return new URL(DEFAULT_API_ORIGIN).origin; } catch (_) { return ''; } })()
   ]);
   const LGMDM = global.LGMDM = global.LGMDM || {};
   LGMDM.api = LGMDM.api || {};
@@ -53,7 +61,9 @@
     if (origin !== global.location.origin && !ALLOWED_REMOTE_API_ORIGINS.has(origin)) {
       throw new Error('Origen de API no permitido por la política de seguridad de LGMDM');
     }
-    return origin;
+    // Devolvemos origin + pathname (ej: "https://host/api" o "http://127.0.0.1:8000")
+    // para que apiBase() incluya el prefijo /api cuando corresponde.
+    return origin + url.pathname;
   }
 
   function apiBase() {
@@ -91,6 +101,7 @@
   }
 
   function apiUrl(path = '') {
+    // apiBase() ya incluye /api cuando la API es same-origin.
     if (!path) return apiBase();
     return `${apiBase()}${path.startsWith('/') ? path : `/${path}`}`;
   }
@@ -101,7 +112,9 @@
       throw new Error('La URL de la API debe usar http:// o https://');
     }
     const base = `${url.protocol === 'https:' ? 'wss' : 'ws'}://${url.host}`;
-    return `${base}${path.startsWith('/') ? path : `/${path}`}`;
+    // url.pathname puede ser "/api" (same-origin) o "" (localhost:8000 / legacy).
+    const basePath = url.pathname.replace(/\/$/, '');
+    return `${base}${basePath}${path.startsWith('/') ? path : `/${path}`}`;
   }
 
   async function wsAuthHandle(path = '') {
@@ -143,7 +156,8 @@
   function resolveApiTarget(path) {
     const raw = String(path ?? '');
     const target = /^https?:\/\//i.test(raw) ? new URL(raw) : new URL(apiUrl(raw));
-    const baseOrigin = apiBase();
+    // apiBase() puede incluir path (/api) — comparar SOLO el origin.
+    const baseOrigin = new URL(apiBase()).origin;
     if (target.origin !== baseOrigin) {
       throw new Error('Destino API fuera del origen permitido');
     }
@@ -201,8 +215,14 @@
       // AbortController manual + setTimeout. La razón y la limpieza del
       // timer las maneja el browser — menos código, menos bugs.
       const timeoutSignal = timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : null;
-      const signal = (timeoutSignal && externalSignal) ? AbortSignal.any([timeoutSignal, externalSignal])
-                   : timeoutSignal || externalSignal || null;
+      // AbortSignal.any es Chrome 116+/FF 124+/Safari 17.4+. Fallback:
+      // si no existe, usamos la señal externa del caller si la hay, si no el timeout.
+      let signal = timeoutSignal || externalSignal || null;
+      if (timeoutSignal && externalSignal) {
+        signal = (typeof AbortSignal.any === 'function')
+          ? AbortSignal.any([timeoutSignal, externalSignal])
+          : externalSignal;
+      }
 
       try {
         const requestOptions = { ...opts };
