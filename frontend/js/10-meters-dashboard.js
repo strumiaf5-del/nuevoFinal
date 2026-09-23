@@ -157,7 +157,6 @@ let dashboardWS = null,
 function startDashboardPolling() {
   stopDashboard();
   dashboardPollTimer = setInterval(async () => {
-    if (!LGMDM.api.authToken?.()) { stopDashboard(); return; }
     try {
       const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/dashboard`);
       if (res.status === 401 || res.status === 403) { stopDashboard(); return; }
@@ -180,7 +179,6 @@ function stopDashboard() {
 
 async function startDashboard() {
   stopDashboard();
-  if (!LGMDM.api.authToken?.()) return;
   startDashboardPolling();
 }
 

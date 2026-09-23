@@ -395,20 +395,20 @@
   // ── Init ──────────────────────────────────────────────────────────────────
 
   function init() {
-    const token = getToken();
-    const user  = getUser();
+    const user = getUser();
 
-    // Si no hay sesión válida, redirigir inmediatamente a la página de login
-    if (!token || !user) {
-      window.location.replace('login.html');
-      return;
-    }
-
-    // Validar sesión previa con el backend
+    // SEC-A-01: no pre-chequeamos token (vive en cookie HttpOnly que JS no
+    // puede leer). Preguntamos al server con /auth/me — si la cookie es
+    // válida, seguimos; si no, redirect a login.
     LGMDM.api.apiFetch('/auth/me', { signal: AbortSignal.timeout(4000) })
       .then(async res => {
         if (res.ok) {
-          onAuthenticated(user);
+          let serverUser = user;
+          try {
+            const data = await res.json();
+            serverUser = data?.user || data || user;
+          } catch (_) {}
+          onAuthenticated(serverUser);
           hideAuthOverlay();
           return;
         }

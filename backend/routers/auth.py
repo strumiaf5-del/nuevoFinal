@@ -77,9 +77,10 @@ def create_auth_router(*, logger, limiter) -> APIRouter:
     # credenciales. Sin esto, un atacante podía probar miles de passwords por
     # minuto contra handle_login (PBKDF2 es lento pero la IP sin throttle es
     # gratis). Frena el vector antes de verificar el JWT.
-    # SEC-A-01: además del access_token en el body, setea cookie HttpOnly
-    # con SameSite=Strict para que el browser la mande sola en requests
-    # siguientes. Secure=False en HTTP (localhost dev), True en producción.
+    # SEC-A-01: además del access_token en el body, setea cookie HttpOnly.
+    # SameSite: None en prod (secure=True) porque los subdominios duckdns.org
+    # son cross-site (PSL); Lax en dev localhost. Secure=False en HTTP (localhost
+    # dev), True en producción.
     @router.post("/auth/login", tags=["Auth"])
     @limiter.limit("5/minute")
     def login(request: Request, response: Response, req: LoginRequest):

@@ -224,8 +224,16 @@ AUTH_COOKIE_MAX_AGE_SEC = JWT_EXPIRY_SEC
 
 def set_auth_cookie(response: Response, token: str, secure: bool = True) -> None:
     """Setea cookie HttpOnly con el JWT. Secure flag depende del transporte —
-    en localhost (HTTP) lo apagamos para que el browser la acepte; en
-    producción (HTTPS) Secure=True."""
+    en localhost (HTTP) lo apagamos para que browser la acepte; en
+    producción (HTTPS) Secure=True.
+
+    SameSite: duckdns.org está en el Public Suffix List, así que
+    masteringstudio.duckdns.org y masteringstudio-api.duckdns.org son
+    "cross-site" entre sí — SameSite=Strict/Lax NO mandaría la cookie en
+    fetch/XHR cross-origin. En producción (secure=True) usamos None;
+    en dev localhost (secure=False) SameSite=None sin Secure lo rechaza
+    el browser, y localhost:80 → localhost:8000 es same-site (host igual,
+    puerto irrelevante para site), así que Lax alcanza."""
     response.set_cookie(
         key=AUTH_COOKIE_NAME,
         value=token,
@@ -233,7 +241,7 @@ def set_auth_cookie(response: Response, token: str, secure: bool = True) -> None
         path="/",
         secure=secure,
         httponly=True,
-        samesite="strict",
+        samesite="none" if secure else "lax",
     )
 
 

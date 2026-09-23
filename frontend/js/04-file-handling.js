@@ -259,12 +259,12 @@
       }
 
       document.getElementById("btnRefreshLibrary")?.addEventListener("click", refreshLibraryList);
-      // La librería es protegida: cargarla únicamente cuando exista sesión.
-      // Si el módulo se inicializa antes del login, esperamos al evento de auth.
+      // La librería es protegida: el server responde 401 si no hay sesión
+      // (cookie HttpOnly — no hay token client-side que chequear). Si el
+      // módulo se inicializa antes del login, el intento falla en silencio
+      // y el evento de auth recarga la lista.
       const loadLibraryWhenAuthenticated = () => {
-        if (!!LGMDM.api.authToken()) {
-          refreshLibraryList();
-        }
+        refreshLibraryList();
       };
       window.addEventListener("lgmdm:authenticated", refreshLibraryList);
       loadLibraryWhenAuthenticated();

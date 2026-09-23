@@ -105,13 +105,16 @@
   }
 
   async function wsAuthHandle(path = '') {
-    if (!authToken()) {
+    // SEC-A-01: la sesión vive en cookie HttpOnly — JS no puede verificarla
+    // client-side. Pedimos el ticket igual; el server responde 401/403 si no
+    // hay sesión y eso se mapea a AUTH_REQUIRED para los callers.
+    const url = wsUrl(path);
+    const res = await apiFetch('/auth/ws-ticket');
+    if (res.status === 401 || res.status === 403) {
       const err = new Error('Sesión requerida para autorizar WebSocket');
       err.code = 'AUTH_REQUIRED';
       throw err;
     }
-    const url = wsUrl(path);
-    const res = await apiFetch('/auth/ws-ticket');
     if (!res.ok) throw new Error(`No se pudo autorizar WebSocket (${res.status})`);
     const data = await res.json();
     if (!data.token || typeof data.token !== 'string') {
@@ -171,6 +174,11 @@
 
   async function apiFetch(path, options = {}) {
     const opts = { ...options };
+    // SEC-A-01: la auth vive en cookie HttpOnly de masteringstudio-api.
+    // Cross-origin (subdominios duckdns son cross-site por PSL) el fetch
+    // default credentials:'same-origin' NO manda cookies — hace falta
+    // 'include' explícito en CADA request.
+    if (opts.credentials === undefined) opts.credentials = 'include';
     const method = String(opts.method || 'GET').toUpperCase();
     const externalSignal = opts.signal || null;
     const timeoutOption = Object.prototype.hasOwnProperty.call(opts, 'timeout') ? opts.timeout : undefined;

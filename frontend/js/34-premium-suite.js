@@ -1573,7 +1573,8 @@
     const res = await fetch(`${apiBase}${endpoint}`, {
       method: 'POST',
       headers,
-      body: formData
+      body: formData,
+      credentials: 'include'
     });
     if (res.status === 404) {
       const err = new Error(`DSP endpoint ${endpoint} no disponible en este despliegue — se habilitará pronto`);

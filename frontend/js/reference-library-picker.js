@@ -22,12 +22,8 @@
 
   // ── Cargar índice desde el servidor ──────────────────────────────────────
   async function loadLibrary({retryOnAuth=false} = {}) {
-    // Nunca disparamos una llamada protegida sin sesión disponible.
-    const token = LGMDM.api.authToken();
-    if (!token) {
-      if (_statusEl) _statusEl.textContent = "Iniciá sesión para cargar la biblioteca.";
-      return;
-    }
+    // SEC-A-01: sin token client-side (cookie HttpOnly) — el server decide:
+    // 401 = sin sesión, y el caller lo maneja.
     try {
       const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/reference-library`);
       if (res.status === 401 && retryOnAuth) {
@@ -241,11 +237,11 @@
   // ── Init ──────────────────────────────────────────────────────────────────
   function init() {
     _injectButton();
-    // Solo pre-cargamos cuando hay sesión. Si el login ocurre después,
-    // el evento de autenticación dispara la carga una sola vez.
+    // SEC-A-01: sin token client-side — intentamos cargar igual; si no hay
+    // sesión el server responde 401 y retryOnAuth reintenta una vez por si
+    // el evento de login está por llegar. El evento de auth también recarga.
     const maybeLoad = () => {
-      const token = LGMDM.api.authToken();
-      if (token) loadLibrary({retryOnAuth:true}).catch(() => {});
+      loadLibrary({retryOnAuth:true}).catch(() => {});
     };
     maybeLoad();
     bindOnce(window, "lgmdm:authenticated", maybeLoad, "reference-library-authenticated");

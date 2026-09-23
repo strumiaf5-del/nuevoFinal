@@ -282,7 +282,8 @@
       const response = await fetch(`${apiBase}/pitch-correct`, {
         method: 'POST',
         headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-        body: formData
+        body: formData,
+        credentials: 'include'
       });
 
       if (!response.ok) {
