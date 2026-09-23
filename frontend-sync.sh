@@ -59,7 +59,19 @@ done
 
 # ── Validaciones ──
 [[ -d "$SRC" ]] || { echo "ERROR: SRC no existe: $SRC" >&2; exit 1; }
-[[ -f "$SRC/index.html" ]] || { echo "ERROR: $SRC no parece un frontend (no hay index.html)" >&2; exit 1; }
+[[ -f "$SRC/index.html" ]] || { echo "ERROR: SRC no parece un frontend (no hay index.html)" >&2; exit 1; }
+
+# ── SRI guard: regenerar hashes antes de cada deploy ──
+# Si un .js/.css cambió sin regenerar el integrity= del HTML, el browser
+# bloquea el recurso (SRI mismatch) y la app rompe en cascada. El script
+# reescribe los hashes stale in-place antes del rsync para que eso nunca
+# llegue a producción. Ver frontend/tools/regen-sri.py.
+if [[ -f "$SRC/tools/regen-sri.py" ]] && command -v python3 >/dev/null 2>&1; then
+    if ! python3 "$SRC/tools/regen-sri.py" 2>&1 | tee -a "$LOG"; then
+        echo "ERROR: regen-sri.py falló (¿archivos referenciados inexistentes?)" >&2
+        exit 1
+    fi
+fi
 
 mkdir -p "$DST"
 
@@ -87,6 +99,7 @@ RSYNC_ARGS=(
     --exclude='tmp/**'
     --exclude='*.log'
     --exclude='.cache/**'
+    --exclude='tools/**'           # scripts dev (regen-sri etc) — no va al docroot
 )
 
 if [[ $DELETE -eq 1 ]]; then
