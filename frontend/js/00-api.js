@@ -144,13 +144,6 @@
     };
   }
 
-  async function wsAuthUrl(path = '') {
-    const { url, token } = await wsAuthHandle(path);
-    const target = new URL(url);
-    target.searchParams.set('token', token);
-    return target.toString();
-  }
-
   const rawFetch = global.fetch.bind(global);
 
   function resolveApiTarget(path) {
@@ -299,7 +292,7 @@
     delete: (path, options) => request('DELETE', path, options),
   };
 
-  Object.assign(LGMDM.api, { apiBase, apiUrl, wsUrl, wsAuthHandle, wsAuthUrl, authToken, csrfToken, authHeaders, apiFetch, downloadAuthenticated, resolveApiTarget, request, client });
+  Object.assign(LGMDM.api, { apiBase, apiUrl, wsUrl, wsAuthHandle, authToken, csrfToken, authHeaders, apiFetch, downloadAuthenticated, resolveApiTarget, request, client });
 
   const domCache = new Map();
   function cachedEl(id) {

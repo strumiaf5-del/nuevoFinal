@@ -88,7 +88,7 @@ BUTTONS
   .btn-download {
     background: color-mix(in srgb, var(--ui-warm-soft) 14%, transparent);
     border: 1px solid var(--ui-warn);
-    color: var(--ui-surface);
+    color: var(--ui-warn);
     margin-top: var(--space-2);
     display: none;
     font-weight: 700;
@@ -108,7 +108,7 @@ BUTTONS
   }
   .btn-automaster {
     background: linear-gradient(135deg, var(--ui-warn-2) 0%, var(--ui-warn) 50%, color-mix(in srgb, var(--ui-warm-soft) 95%, transparent) 100%);
-    color: var(--ui-surface);
+    color: #0a0907;
     font-weight: 700;
     box-shadow: 0 2px 14px color-mix(in srgb, var(--ui-warm-soft) 22%, transparent);
     position: relative;

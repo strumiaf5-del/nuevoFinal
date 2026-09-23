@@ -271,22 +271,9 @@ startDashboard();
     const reso = _chain.reso || _chain.reso_meters || {};
     const preLim = _chain.pre_limiter || {};
     const postLim = _chain.post_limiter || {};
-    // FIX 2 cont: el mb-gr-section ahora SIEMPRE visible (era hidden-panel
-    // por defecto). El JS sólo añade hidden-panel si NO hay datos de ningún
-    // meter, y la remueve cuando llegan.
+    // GR section lives in Console and is always visible (no show/hide).
     const grSection = document.getElementById('mbGrSection');
-    const hasAnyMeter = [
-      mb.low_gr_db, mb.mid_gr_db, mb.high_gr_db,
-      compM.gr_db, glueM.gr_db, parM.gr_db,
-      msComp.mid_gr_db, msComp.side_gr_db,
-      deess.gr_db, reso.gr_db,
-      preLim.rms_db, preLim.peak_db,
-      postLim.rms_db, postLim.peak_db, postLim.lufs
-    ].some(Number.isFinite);
-    if (grSection) {
-      if (hasAnyMeter) grSection.classList.remove('hidden-panel');
-      else grSection.classList.add('hidden-panel');
-    }
+    if (grSection) grSection.classList.remove('hidden-panel');
 
     const grBar = (barId, readId, grDb, { bypassLabel } = {}) => {
       const bar = document.getElementById(barId);

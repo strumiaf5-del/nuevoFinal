@@ -1,7 +1,7 @@
     (function () {
       'use strict';
 
-      const TOKEN_KEY = 'master_auth_token';
+      const TOKEN_KEY = (typeof LGMDM !== 'undefined' && LGMDM.TOKEN_KEY) || 'master_auth_token';
       const USER_KEY  = 'master_auth_user';
 
       // 1. Detección automática del origen de la API

@@ -149,7 +149,6 @@
     flex-direction: column;
     gap: 8px;
     padding: var(--space-4);
-    aria-busy: "true";
   }
   .skeleton-line {
     height: 12px;
@@ -661,7 +660,7 @@
     color: var(--ui-warn);
   }
   .delta.down {
-    background: rgba(232, 48, 32, 0.15);
+    background: color-mix(in srgb, var(--ui-danger) 15%, transparent);
     color: var(--ui-danger);
   }
   /* ── Empty state ── */

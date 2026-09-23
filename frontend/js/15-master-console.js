@@ -101,6 +101,16 @@
   function getPreviewAudio() {
     return document.querySelector('#previewAudioWrap audio, #mxrServerPreviewAudio');
   }
+
+  function stopAllPlayback() {
+    document.querySelectorAll('#previewAudioWrap audio, #mxrServerPreviewAudio').forEach((a) => {
+      try { a.pause(); a.currentTime = 0; } catch (_) {}
+    });
+    window.LGMDM?.previewController?.stop?.();
+    window.LGMDM?.ab?.stop?.();
+    window.LGMDM?.mixer?.stopPreview?.(true);
+    window.LGMDM?.reference?.stopRefPreview?.();
+  }
   function formatTime(sec) {
     if (!Number.isFinite(sec)) return '--:--';
     const m = Math.floor(sec / 60).toString().padStart(2, '0');
@@ -110,6 +120,31 @@
 
   function metricAmp(db, floor = -72) { return window.clamp01((Number(db ?? floor) - floor) / (0 - floor)); }
 
+  function ensureScopeTap() {
+    const tapApi = window.LGMDM?.proFeatures?.audioTap;
+    if (!tapApi?.ensure) return null;
+    try { return tapApi.ensure(); } catch (_) { return null; }
+  }
+
+  function isSignalPlaying() {
+    const a = state.audio || getPreviewAudio();
+    return !!(a && !a.paused && !a.ended);
+  }
+
+  function drawIdleWaveform(ctx, w, h, dpr, label) {
+    ctx.fillStyle = 'rgba(116,230,255,.28)';
+    ctx.font = `${Math.max(10, 11 * dpr)}px ${getComputedStyle(document.documentElement).getPropertyValue('--ui-font-mono') || 'monospace'}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(0, h / 2);
+    ctx.lineTo(w, h / 2);
+    ctx.strokeStyle = 'rgba(116,230,255,.18)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
   function drawWaveform() {
     const canvas = LGMDM.dom.byId('lgmdmWaveformCanvas'); if (!canvas) return;
     const rect = canvas.getBoundingClientRect(); const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -118,38 +153,104 @@
     const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, w, h);
     ctx.strokeStyle = 'rgba(116,230,255,.09)'; ctx.lineWidth = 1;
     for (let i = 1; i < 8; i++) { const y = h / 8 * i; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+    const mid = h / 2;
+    const playing = isSignalPlaying();
+    const tap = playing ? ensureScopeTap() : null;
+    const analyser = tap?.analyserWaterfall || null;
+    if (!playing || !analyser) {
+      drawIdleWaveform(ctx, w, h, dpr, 'Sin señal — reproducí el Preview');
+      return;
+    }
+    if (!state.timeBuf || state.timeBuf.length !== analyser.fftSize) {
+      state.timeBuf = new Float32Array(analyser.fftSize);
+    }
+    try { analyser.getFloatTimeDomainData(state.timeBuf); } catch (_) {
+      drawIdleWaveform(ctx, w, h, dpr, 'Sin señal — reproducí el Preview');
+      return;
+    }
+    const buf = state.timeBuf;
+    const n = buf.length;
+    // Envelope history from real peak/rms metrics (for the amber RMS trail)
     const m = state.metrics || {};
     const peakAmp = metricAmp(m.peak_db, -72);
     const rmsAmp = metricAmp(m.rms_db, -72);
-    const gr = Math.max(0, Math.min(1, Math.abs(Number(m.comp_gr_db ?? 0)) / 12));
-    state.waveHistory.push({ peak: peakAmp, rms: rmsAmp, gr });
+    state.waveHistory.push({ peak: peakAmp, rms: rmsAmp, gr: Math.max(0, Math.min(1, Math.abs(Number(m.comp_gr_db ?? 0)) / 12)) });
     if (state.waveHistory.length > 90) state.waveHistory.shift();
-    const hist = state.waveHistory;
+    // Real waveform: map time-domain samples to canvas
     const grad = ctx.createLinearGradient(0,0,w,0);
-    grad.addColorStop(0,'rgba(87,230,255,.25)'); grad.addColorStop(.5,'rgba(169,140,255,.85)'); grad.addColorStop(1,'rgba(87,230,255,.25)');
-    const mid=h/2;
-    ctx.strokeStyle=grad; ctx.lineWidth=Math.max(1,1.4*dpr);
+    grad.addColorStop(0,'rgba(87,230,255,.35)'); grad.addColorStop(.5,'rgba(169,140,255,.95)'); grad.addColorStop(1,'rgba(87,230,255,.35)');
+    ctx.strokeStyle = grad; ctx.lineWidth = Math.max(1, 1.4 * dpr);
     ctx.beginPath();
-    const phase=(performance.now()-state.start)/500;
-    for(let i=0;i<220;i++){
-      const t=i/219, idx=Math.min(hist.length-1, Math.floor(t*(hist.length-1)));
-      const item=hist[idx]||{peak:peakAmp,rms:rmsAmp,gr:0};
-      const env=Math.max(.03, item.rms*.75 + item.peak*.25);
-      const texture=.45*Math.sin(t*34+phase) + .2*Math.sin(t*87-phase*.6) + .12*Math.sin(t*13+phase*.3);
-      const y=mid-texture*env*h*.38;
-      i?ctx.lineTo(t*w,y):ctx.moveTo(t*w,y);
+    const step = Math.max(1, Math.floor(n / w));
+    for (let x = 0; x < w; x++) {
+      const i = Math.min(n - 1, x * step);
+      const v = Math.max(-1, Math.min(1, buf[i]));
+      const y = mid - v * (h * 0.42);
+      x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
     }
     ctx.stroke();
-    // Dynamic envelope: real RMS/peak + gain-reduction history.
+    // Mirror half (filled envelope from |sample|)
     ctx.beginPath();
-    hist.forEach((item,i)=>{
-      const x = hist.length===1 ? 0 : i/(hist.length-1)*w;
-      const y = mid - item.rms*h*.36;
-      i ? ctx.lineTo(x,y) : ctx.moveTo(x,y);
-    });
-    ctx.strokeStyle='rgba(255,202,101,.9)'; ctx.lineWidth=Math.max(1,1*dpr); ctx.stroke();
-    const liveX = w*.78, liveH = Math.max(2, peakAmp*h*.32);
-    ctx.fillStyle='rgba(87,230,255,.12)'; ctx.fillRect(liveX, mid-liveH, w-liveX, liveH*2);
+    for (let x = 0; x < w; x++) {
+      const i = Math.min(n - 1, x * step);
+      const a = Math.abs(buf[i]);
+      const y = mid + a * (h * 0.42);
+      x ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.strokeStyle = 'rgba(87,230,255,.28)'; ctx.lineWidth = Math.max(1, 1 * dpr); ctx.stroke();
+    // Amber RMS history trail (real metrics, not fake texture)
+    const hist = state.waveHistory;
+    if (hist.length > 1) {
+      ctx.beginPath();
+      hist.forEach((item, i) => {
+        const x = i / (hist.length - 1) * w;
+        const y = mid - item.rms * h * 0.36;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      });
+      ctx.strokeStyle = 'rgba(255,202,101,.85)'; ctx.lineWidth = Math.max(1, 1 * dpr); ctx.stroke();
+    }
+  }
+
+  function drawWaterfall() {
+    const canvas = LGMDM.dom.byId('lgmdmWaterfallCanvas'); if (!canvas) return;
+    const rect = canvas.getBoundingClientRect(); const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.max(320, Math.floor(rect.width * dpr)), h = Math.max(80, Math.floor(rect.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+    const ctx = canvas.getContext('2d');
+    const playing = isSignalPlaying();
+    const tap = playing ? ensureScopeTap() : null;
+    const an = tap?.analyserWaterfall;
+    if (!playing || !an) {
+      ctx.fillStyle = '#070c24';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = 'rgba(116,230,255,.35)';
+      ctx.font = `${Math.max(9, 10 * dpr)}px monospace`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Sin señal', w / 2, h / 2);
+      return;
+    }
+    if (!state.wfBuf || state.wfBuf.length !== an.frequencyBinCount) {
+      state.wfBuf = new Uint8Array(an.frequencyBinCount);
+    }
+    try { an.getByteFrequencyData(state.wfBuf); } catch (_) { return; }
+    const vr = window.LGMDM?.visualizerRender;
+    if (vr?.drawWaterfallFrame) {
+      vr.drawWaterfallFrame(canvas, ctx, null, state.wfBuf);
+      return;
+    }
+    // Fallback: simple 1px scroll + colormap
+    const img = ctx.getImageData(0, 0, w, h);
+    ctx.putImageData(img, 0, 1);
+    const bins = state.wfBuf.length;
+    for (let x = 0; x < w; x++) {
+      const binIdx = Math.min(bins - 1, Math.floor(Math.pow(x / w, 1.5) * (bins - 1)));
+      const mag = state.wfBuf[binIdx] / 255;
+      const r = Math.min(255, mag * 320) | 0;
+      const g = Math.min(255, mag * 220) | 0;
+      const b = Math.min(255, 40 + mag * 180) | 0;
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(x, 0, 1, 1);
+    }
   }
 
   function drawConsoleSpectrum() {
@@ -300,6 +401,11 @@
     if (_waveformCanvas && typeof window.setupCanvasResize === 'function') {
       state._waveformCleanup = window.setupCanvasResize(_waveformCanvas, () => drawWaveform());
     }
+    const _waterfallCanvas = LGMDM.dom.byId('lgmdmWaterfallCanvas');
+    if (_waterfallCanvas && typeof window.setupCanvasResize === 'function') {
+      state._waterfallCleanup = window.setupCanvasResize(_waterfallCanvas, () => drawWaterfall());
+    }
+    window.addEventListener('lgmdm:preview-ready', () => { ensureScopeTap(); });
     LGMDM.dom.byId('consoleAnalyzeBtn')?.addEventListener('click',()=>{LGMDM.dom.byId('btnAnalyze')?.click();setStatus('Analizando audio…',true);});
     LGMDM.dom.byId('consoleMasterBtn')?.addEventListener('click',()=>{LGMDM.dom.byId('btnMasterAsync')?.click();setStatus('Mastering en cola…',true);});
     LGMDM.dom.byId('consolePlayBtn')?.addEventListener('click',()=>{
@@ -311,14 +417,7 @@
       if(audio.paused){audio.play().catch((e)=>setStatus('No se pudo reproducir el Preview: '+e.message));pb.textContent='❚❚';pb.setAttribute('aria-pressed','true');state.playing=true;state.start=performance.now();setStatus('Preview reproduciendo',true);}else{audio.pause();pb.textContent='▶';pb.setAttribute('aria-pressed','false');state.playing=false;setStatus('Preview en pausa');}
     });
     LGMDM.dom.byId('consoleStopBtn')?.addEventListener('click',()=>{
-      // BUGFIX: esto solo pausaba un <audio> HTML normal, pero el preview en
-      // vivo en realidad suena por Web Audio API (AudioContext + buffers
-      // PCM24 agendados desde el WebSocket en 09-visualizers.js) — un
-      // mecanismo totalmente aparte que nunca se tocaba. Por eso "parar"
-      // no paraba: el audio seguía sonando via el AudioContext, que ya
-      // tenía buffers agendados a futuro y nadie los cancelaba.
-      const audio=getPreviewAudio();if(audio){audio.pause();audio.currentTime=0;}
-      window.LGMDM?.previewController?.stop?.();
+      stopAllPlayback();
       state.playing=false;LGMDM.dom.byId('consolePlayBtn').textContent='▶';setStatus('Preview detenido');
     });
     const livePreviewToggle = LGMDM.dom.byId('s-livepreview');
@@ -359,7 +458,7 @@
         return;
       }
       const onConsole = document.body.dataset.workspace === "console";
-      if(onConsole){ drawWaveform(); syncMetersFromDom(); drawConsoleSpectrum(); }
+      if(onConsole){ drawWaveform(); syncMetersFromDom(); drawConsoleSpectrum(); drawWaterfall(); }
       state.audio=getPreviewAudio();
       const audio=state.audio;
       if (audio && onConsole) {
@@ -411,10 +510,14 @@
     limiter_bypass: !!state.stageBypass.limiter,
   });
   root.masterConsole.setAB=setAB; root.masterConsole.toggleAB=toggleAB; root.masterConsole.schedulePreview=scheduleConsolePreview;
+  root.masterConsole.stopAllPlayback=stopAllPlayback;
+  root.console = root.masterConsole;
   function teardown(){
     if(state.raf){ cancelAnimationFrame(state.raf); state.raf=0; }
     if(state._fileNameObserver){ state._fileNameObserver.disconnect(); state._fileNameObserver=null; }
     if(state._waveformCleanup){ state._waveformCleanup(); state._waveformCleanup=null; }
+    if(state._waterfallCleanup){ state._waterfallCleanup(); state._waterfallCleanup=null; }
+    state.timeBuf = null; state.wfBuf = null; state.waveHistory = [];
     wired=false;
   }
   root.masterConsole.teardown=teardown;

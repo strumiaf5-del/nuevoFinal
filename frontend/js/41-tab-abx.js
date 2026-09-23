@@ -10,7 +10,8 @@
 
 (function (global) {
   "use strict";
-  const proFeatures = global.LGMDM = global.LGMDM || {};
+  global.LGMDM = global.LGMDM || {};
+  const proFeatures = global.LGMDM.proFeatures = global.LGMDM.proFeatures || {};
 
   function renderAbxTab(container) {
     if (typeof global._lgmdmRenderAbxTab === "function") {

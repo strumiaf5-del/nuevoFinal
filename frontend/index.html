@@ -23,16 +23,15 @@
 <link href="css/base/themes.css" rel="stylesheet" integrity="sha384-U7c2VKFfi+8LjbbNz3L+b1OIXGQdpegnnRCXdOi/9D2lBco0obFdNVP92yxe4b/8" crossorigin="anonymous"/>
 <link href="css/base/themes-professional.css" rel="stylesheet" integrity="sha384-HXwDxZsk88+fVCDRz2GhzlfhlLzQRRMpu1RWWeg6aNgYEG/r/sPhpT2E/iRQe5HO" crossorigin="anonymous"/>
 <link href="css/layout/layout-shell.css" rel="stylesheet" integrity="sha384-2CrJ1Gc4HjxcdztMbtyKouqChhu8XYz4JtNmH5j7GAVrGlGQRWh7KafNhmyCDe82" crossorigin="anonymous"/>
-<link href="css/components/studio.css" rel="stylesheet" integrity="sha384-TEiggzCycddhBYp6xdGwxUdydtv6uH+t7gRgQZ+94S0vvh2dDORq0y/2R/Pi1G7P" crossorigin="anonymous"/>
 <link href="css/components/studio-pro.css" rel="stylesheet" integrity="sha384-+dNixP8QhI0PJmSwz0TVVY9DlnEipn1HBmHfmm9yeUnQp1oFEG4ODUu5FAQMGXr2" crossorigin="anonymous"/>
-<link href="css/components/lgmdm-studio.css" rel="stylesheet" integrity="sha384-KWkZePNkJIKvqDlVFOoZSzyyHkUMemF9c2WO71n015xduXDr/Gqud283e+emQ3Ue" crossorigin="anonymous"/>
+<link href="css/components/lgmdm-studio.css" rel="stylesheet" integrity="sha384-Z/rXEdKcgYs8Bev8X9cfSFFtCVipWETbsHcnX3FuL+meA5eLPCQr7J5ihMwA9U7w" crossorigin="anonymous"/>
 <link href="css/components/_index.css" rel="stylesheet" integrity="sha384-jIw/P9atwvRtx4lrevl46eIt5pPW0blZErRD6p5E5q1nfeJFuQfEvqr9qdNR6qhj" crossorigin="anonymous"/>
 <link href="css/components/lgmdm.css" rel="stylesheet" integrity="sha384-qPlbPuFs8bH9bR8LzV2xsttSM5pLhtCYxPOkuR0du1Rl2HymLI/PGIT+AUpD7G7G" crossorigin="anonymous"/>
 <link href="css/widgets/chain-family-tabs.css" rel="stylesheet" integrity="sha384-omjR5WL+W4rqr8RuIKJ0oCfDfbNEgyC+2mrXXEYtBYqk83w4xf16Mmp93AYvumHX" crossorigin="anonymous"/>
 <link href="css/widgets/pro-widgets-v2.css" rel="stylesheet" integrity="sha384-9iCfXmqn3gOOrOWX9JG99uYtHspQVv/vlkF7H53iaA5i+n6FeM9u+0n525Fs8RK0" crossorigin="anonymous"/>
-<link href="css/widgets/pro-insert-rack.css" rel="stylesheet" integrity="sha384-Cg75n2PTi4AG4Xsg01/AgKL5mRDnYQV3wp3o4DuvUsnEHcL/MjhAakF4TEQgJAuU" crossorigin="anonymous"/>
+<link href="css/widgets/pro-insert-rack.css" rel="stylesheet" integrity="sha384-benqtaDb0qfKFQuOfZ0YcFVACExh/1yxCgDokkkO7yiIUaMsj16P03ibOAwoUCaZ" crossorigin="anonymous"/>
 <link href="css/layout/responsive.css" rel="stylesheet" integrity="sha384-a4UxJgGbdNH0J6j3kMOHW+XIaeBTkgAIPWfHssX9epjtwSo96B1Eda5SnqahGfxV" crossorigin="anonymous"/>
-<link href="css/skin/themes-professional-skin.css" rel="stylesheet" integrity="sha384-wBLTwQmiG4RBBIV399wdATlnria/QFAQgUyYaAKq2drRflEgruIZfb/BeEk0bjdM" crossorigin="anonymous"/>
+<link href="css/skin/themes-professional-skin.css" rel="stylesheet" integrity="sha384-TMHaZYU8fw3uV2IAKTuFScwZ5umKgEztu24WtmnDMKC0uWZqtUPAo2lvj8lFKbyU" crossorigin="anonymous"/>
 </head>
 <body>
 <a href="#main" class="sr-only sr-only-focusable">Saltar al contenido principal</a>
@@ -1574,6 +1573,13 @@
 <div class="spectrum-freq-scale" aria-hidden="true">
 <span>20Hz</span><span>50Hz</span><span>100Hz</span><span>250Hz</span><span>500Hz</span><span>1kHz</span><span>2.5kHz</span><span>5kHz</span><span>10kHz</span><span>20kHz</span>
 </div>
+<div class="lg-waterfall-stage" id="consoleWaterfallStage">
+<div class="lg-panel-head compact">
+<div><span class="lg-panel-kicker">WATERFALL</span><strong>Spectrogram (scroll)</strong></div>
+<span class="lg-live"><i></i>LIVE</span>
+</div>
+<canvas aria-label="Waterfall espectrograma en tiempo real" id="lgmdmWaterfallCanvas" width="800" height="140"></canvas>
+</div>
 </div>
 </div>
 <div class="lg-console-transport">
@@ -1699,8 +1705,9 @@
   <div id="lufsTarget">Target Spotify/YouTube: -14 LUFS · Club: -9 LUFS</div>
 </div>
 </div>
-<!-- Multiband GR -->
-<div class="mb-gr-section" id="mbGrSection">
+<!-- Multiband GR — always visible in Console -->
+<section aria-label="Gain Reduction" class="mb-gr-section" id="mbGrSection" data-workspace-section="console">
+<span class="lg-panel-kicker">GAIN REDUCTION</span>
 <div class="mb-gr-title">Reducción de Ganancia Multibanda</div>
 <div class="mb-gr-grid">
 <div class="mb-gr-col">
@@ -1791,7 +1798,7 @@
 </div>
 </div>
 </div>
-</div>
+</section>
 </div>
 </div>
 </section>
@@ -1848,7 +1855,7 @@
 <script defer src="js/00-config.js" integrity="sha384-P85lj9b/4D09FOCjgW2RJIjyI1pi/VVoaBI8Q6L+wZ867s/+CXTpAREjM27O0QbX" crossorigin="anonymous"></script>
 <script defer src="js/00-dom-safety.js" integrity="sha384-d41aPP4uXhgDJbCX4bgJjGn0z2CzJK/0q0ir96ER/niDdFR0S5Lju/xXvWgFmr8R" crossorigin="anonymous"></script>
 <script defer src="js/00-storage.js" integrity="sha384-rKud8kQvkeNX0y54Vi3qfkPmFm6Ro3Gmklt5zWhIWDEMkPuiOzXxWIXK8d26cfr/" crossorigin="anonymous"></script>
-<script defer src="js/00-api.js" integrity="sha384-RqzYY5CJ7HmIGNt3oGTNGVKhUAOOzR82b3dOKn5blgDQLN0koK1hjXBIsvBBugrM" crossorigin="anonymous"></script>
+<script defer src="js/00-api.js" integrity="sha384-Ol3D+Qj7D6nOWHj71xIm1stNJqEUSYPADj0Rw+nys1xvXdHQT61dnpsOsbEK8y5k" crossorigin="anonymous"></script>
 <script defer src="js/00-theme-manager.js" integrity="sha384-kEQ6zn/eXj/ARDN+mGEjguiCSGOTG3YK9dr0AkAFj/APnal7ZfProC9i6/Nrx1ft" crossorigin="anonymous"></script>
 <script defer src="js/00-audio-engine.js" integrity="sha384-8zJpNqZE5npVFhEt6wJWNCisKD5TM7DhHBV5hzgiN3cqOxpeC6KzZYo9m7TsgKz0" crossorigin="anonymous"></script>
 <script defer src="js/00-auth.js" integrity="sha384-zZOrtAz6TJkUXFuUt9A0p87VTmzcHqeP4OPlNyxXe+Ru55B7aRJOHxROs30smbrF" crossorigin="anonymous"></script>
@@ -1858,25 +1865,25 @@
 <script defer src="js/02-sliders-ui.js" integrity="sha384-n7cuZf8kHcKEhLga2FMq2d9CaEOxmczWCeZHHgNrIX+NoA1h8sI7OjUvbU1plkRT" crossorigin="anonymous"></script>
 <script defer src="js/03-presets.js" integrity="sha384-0PwpgyJkxdyfEHALrzj7q72pt1ExdJ9iWs88AnGn2W23dRtadblBpcfLbxLXQzF4" crossorigin="anonymous"></script>
 <script defer src="js/04-file-handling.js" integrity="sha384-5BAs3Xdb7gFZr5Ie2kiS2KtO3WxUzToMNORBfeJh7nMNWX0WWwGcvHkwLyjssxTo" crossorigin="anonymous"></script>
-<script defer src="js/05-eq-waveform.js" integrity="sha384-MvYJRaFYieDiVTOQv0mdeh2PhMBdo+EG6CFHOpcjob8WM7BwZr7OjkhB+id41WfJ" crossorigin="anonymous"></script>
+<script defer src="js/05-eq-waveform.js" integrity="sha384-EU5+XlRjhXOVf4I16THx/4zcvEIyLHaehURMssdc5XI1nmcEbj7jbvCxiGDcsDZf" crossorigin="anonymous"></script>
 <script defer src="js/06-params-builder.js" integrity="sha384-c/6ohyBhne99+FopEeUx+O+A6kgB8cxCvB0vDmkSupan1LJDcs1sJj7uxV0weIz9" crossorigin="anonymous"></script>
 <script defer src="js/07-mastering-actions.js" integrity="sha384-tJpAI7WFGvaHRFsi74cT1j+FRCeuQI0ZRDWrywGm7YkuMe+QNlhocHb3FOeKrphv" crossorigin="anonymous"></script>
-<script defer src="js/08-reference-mastering.js" integrity="sha384-ac3Y+dbNHAp2S0m1kFB9K39AIlbPdlJgLkszXsLvUEXpcGYtGs7w1Jm/SafmRs5g" crossorigin="anonymous"></script>
-<script defer src="js/09-visualizers.js" integrity="sha384-ZKBUeI3GRNzAyATHd4qoSITR6TQXBFof4M4uqn9Wkb+XNE12jjaSPUY2dM1H8+bD" crossorigin="anonymous"></script>
+<script defer src="js/08-reference-mastering.js" integrity="sha384-YWPvfk26HVdgC7vdHxTXwvD83dpVa1YRxPycNd2+uHPjKIL36+j5G5v3mzV3n0P1" crossorigin="anonymous"></script>
+<script defer src="js/09-visualizers.js" integrity="sha384-F6SnUNhqkIYE2Yn1Kj77davYzBg7VIdkQk8Cc+i+asugt1pv7h52Mv584VOpmupE" crossorigin="anonymous"></script>
 <script defer src="js/30-metrics-store.js" integrity="sha384-rXViUfU8uGmqUSC9wqSMJge5zwG+MihjVQgU0vg5QwC1FgC6dJl31AdmhTCEDYH6" crossorigin="anonymous"></script>
-<script defer src="js/10-meters-dashboard.js" integrity="sha384-301PGTwiudfbtJnxpJet9tmb/y2W3OqF3pMzm9rdlqjOXEZjXDYPuZoxLbPFxn2r" crossorigin="anonymous"></script>
+<script defer src="js/10-meters-dashboard.js" integrity="sha384-5HVIGopf33T7IoatiUlj/iZkl8FtR75mbOfMUyCO37Dd+2VlT+i5sLYfw18WqHQ2" crossorigin="anonymous"></script>
 <script defer src="js/11-ai-assistant-ux.js" integrity="sha384-KCB9WgLItOCkUdj3WVHA4Z2rLTPE+y367Li93WdVSYbo4fimRjX2CKiiZS+mE95Y" crossorigin="anonymous"></script>
 <script defer src="js/12-lufs-normalize.js" integrity="sha384-XoNAnsr/5KFtMd6tO7bzZECm3e6olLRLD19wRlcEMTSXA1rXJ8O7P84ij6HpiQAt" crossorigin="anonymous"></script>
 <script defer src="js/13-mixer.js" integrity="sha384-u7GohzPuCmdXLi3qlaXpfaS+5/TFagjzRygTXDpikO5wT+pGMdXg0TQjuIs5Xjey" crossorigin="anonymous"></script>
 <script defer src="js/13-mixer-ui.js" integrity="sha384-KdfIcB1BeqmNZksLWLLDikgw8WmtOBGaXfljs6o914krcRkTohd9EarthZN3RhPa" crossorigin="anonymous"></script>
-<script defer src="js/14-pitch-correction.js" integrity="sha384-ou28ht3Zq34E4osbgetq6icUxqJd7Hn6cMcrXO2zpL/W/dmcf61T2yViYcFMWTlk" crossorigin="anonymous"></script>
-<script defer src="js/15-master-console.js" integrity="sha384-W1IbBAWb4wTN8uHmXjtlYc7cNSJwm40LUKinl0tk9HY43pyRdrt3rxqiyT0PjdZZ" crossorigin="anonymous"></script>
+<script defer src="js/14-pitch-correction.js" integrity="sha384-Tsb0Tn+6iQI9jIBIghnAcpbqTtgOY0ED+ZGnGIxQawJBUE1cMRO1QO5D7jJUJeG3" crossorigin="anonymous"></script>
+<script defer src="js/15-master-console.js" integrity="sha384-tLxUeB5aze/aY4T6KK8JaRNkS3y+02kMR72gGShFWF2uH1CUztpCECv4RZJRkCyK" crossorigin="anonymous"></script>
 <script defer src="js/18-undo-redo.js" integrity="sha384-VA6V06yJ368EIhMKrYhtG+QHBpezUlnRUPr2eci/QaxqHzY69rphN+beiiQnsogn" crossorigin="anonymous"></script>
-<script defer src="js/20-pro-upgrades.js" integrity="sha384-gkvv/hQD8zOIE1qlH5NTJqEtBm/KX865fdgWWGRTjl/UVfqYpe29evI9zSuhDOle" crossorigin="anonymous"></script>
+<script defer src="js/20-pro-upgrades.js" integrity="sha384-Vk+cEknHoyhKwmU7ErYJsTUkvhIro0Y39m0WYl9YMGZr+NjhiI0WKqt6SvizbiCO" crossorigin="anonymous"></script>
 <script defer src="js/22-tabs-handler.js" integrity="sha384-b0NykH2S6ij2C4TUbTQMwW++zkYzqkiI1Dq79Mc9nLHw3pjIQelmk7cPjyJOxAT5" crossorigin="anonymous"></script>
 <script defer src="js/25-workspace-tabs.js" integrity="sha384-o7LCZ95nFv8ug2QK4BCyJXEmdLunB+Fw4t0FSaeUeutpMi/6J1XDW9+CInZuJho1" crossorigin="anonymous"></script>
 <script defer src="js/29-analysis-view.js" integrity="sha384-u4bPScljXjr1ctzuwKgYbURqqhEsjtB3w/eyOiPtPLivKKRIp1RMnKVn2L8pYFvK" crossorigin="anonymous"></script>
-<script defer src="js/30-preview-controller.js" integrity="sha384-b5ACyU9G/JcyLapyVKK+d69UF1yBtpIF34ZXfFDpJZtQNpB/nmOPB7qIkUm1BJAe" crossorigin="anonymous"></script>
+<script defer src="js/30-preview-controller.js" integrity="sha384-lJfGa3l9TiE/E2YO51taiskRKCSjL2k5gupo81U5ytlwvSV2NT0Fht8wBF6nsAxV" crossorigin="anonymous"></script>
 <script defer src="js/32-chain-family-tabs.js" integrity="sha384-5oo4PTL0EEmXDzEXLRWxL5YcpPNdfFpJEHgQoBEt5qnt0DJmk60Cpf2E4c5d31P3" crossorigin="anonymous"></script>
 <script defer src="js/32-flex-layout.js" integrity="sha384-ftlXeJNrT/msAGZRO4bVoeufH5B1i33lfkHxrfeNaPafX7YCqMTmhza62V8irq6u" crossorigin="anonymous"></script>
 <script defer src="js/35-audio-tap.js" integrity="sha384-9QShNo7Zu7FLQvsXaGF37uezxsH9LGtOGQcOBp10vW1x5ow3VBU5aNKfpsCMxvgW" crossorigin="anonymous"></script>
@@ -1893,12 +1900,12 @@
 <!-- pro-features/visualizer-render.js: consume window.LGMDM.visualizerRender.* para goniometro + waterfall. -->
 <script defer src="js/pro-features/visualizer-render.js" integrity="sha384-HTLxbBNLcDdeELURfspS5r4zn2T3DKw5JgtTSK89phRrMFQP+VS37ujyu3Glt7K/" crossorigin="anonymous"></script>
 <!-- 34-premium-suite.js: setea global._lgmdmRenderXTab globals usados por 40-43-tab-*.js -->
-<script defer src="js/34-premium-suite.js" integrity="sha384-imU+6264rKcIW9V5aKQIwFX9w8fVxGAeGGaJzClZ1GufpJk5H+nQrjNp8jlov7y4" crossorigin="anonymous"></script>
+<script defer src="js/34-premium-suite.js" integrity="sha384-E21SBZbAKbDP+7VSb6xKOMDNTr7Jhh44kdm/STRglWUDJfT9EeuGPlS8XSXdUyPM" crossorigin="anonymous"></script>
 <!-- Stubs 40-43 (Audit E): llaman a global._lgmdmRenderXTab seteado por 34-premium-suite arriba -->
-<script defer src="js/40-tab-compliance.js" integrity="sha384-hW2iFGtjOQzQJQHzuh5magtqh60f1t9FEEwbFNB/30+0kt4121TZMeTcej+TjcVv" crossorigin="anonymous"></script>
-<script defer src="js/41-tab-abx.js" integrity="sha384-006SbNZ6TJPXbVef9RPa/a0IQNikBQLpciO9AInxTcBipt3u/korTBg7oL5iy777" crossorigin="anonymous"></script>
-<script defer src="js/42-tab-codec.js" integrity="sha384-89/EISZfsRhEX7wL+5LFs9YU3PFOLfui4Avd/QdcojhSRHZ1IiqOBIsgUfNeq+d+" crossorigin="anonymous"></script>
-<script defer src="js/43-tab-waterfall.js" integrity="sha384-Jag28bgxTDdPK87/OusuJPX86BqeWbnFitTVlurzpHZ7jyeNPmLUm++TblqvpCnV" crossorigin="anonymous"></script>
+<script defer src="js/40-tab-compliance.js" integrity="sha384-W4xjcOE4G1UE4QAaLOpegUqswHpia/tK5UpLEzcYK4mv46Hf9oCNf146p2aUa3bl" crossorigin="anonymous"></script>
+<script defer src="js/41-tab-abx.js" integrity="sha384-URUWjxrpNSd/WAGHi4A+XFY+0MMwSRUMq3BrQGzNvdLTzbHXzVsLYNhkFj7YOI8Z" crossorigin="anonymous"></script>
+<script defer src="js/42-tab-codec.js" integrity="sha384-AMnrbrdZ9gvVbJSrKC0tfkD/WI4QFy7puJjUczGc6jg2sfob8Sbg2DT/D+0y6qXb" crossorigin="anonymous"></script>
+<script defer src="js/43-tab-waterfall.js" integrity="sha384-5c8178gfRjOtIDW4+7VuAjBHn8jruvtfZFopN1fN4suvItoI0UrQ9bRgCISkZeKs" crossorigin="anonymous"></script>
 <script defer src="js/insert-base.js" integrity="sha384-GkDTdTseDL5bXXxvSs1d39r3BLI/gylB+ZVEfRLNngyr865rU8EYxKBVEw0C/kfZ" crossorigin="anonymous"></script>
 <script defer src="js/pro-insert-rack.js" integrity="sha384-vlxQt0kHw3VVkog3GWJgDDU1SRe3Ub9zvJXAcxwnQgOXVqNeNerAZoFfTryZuJ5y" crossorigin="anonymous"></script>
 <script defer src="js/reference-library-picker.js" integrity="sha384-jEtz5aEg03igNGLesn5CHWnorPtnUaxU8uLgJI+Kgi8TzizkC/PJfdO4HpBQlm6O" crossorigin="anonymous"></script>

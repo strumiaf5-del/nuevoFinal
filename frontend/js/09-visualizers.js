@@ -481,6 +481,7 @@ function _updateABUI() {
 window.LGMDM = window.LGMDM || {};
 window.LGMDM.ab = window.LGMDM.ab || {};
 window.LGMDM.ab.setMode = _abSetMode;
+window.LGMDM.ab.stop = _abStop;
 
 function _renderABPlayer() {
   const wrap = document.getElementById("previewAudioWrap");

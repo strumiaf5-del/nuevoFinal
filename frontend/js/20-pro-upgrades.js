@@ -21,9 +21,9 @@
       const originalSave = target.saveState.bind(target);
       // Keep the public contract but make snapshots represent the state BEFORE a change.
       target.saveState = function (state, label = 'Change') {
-        const next = JSON.parse(JSON.stringify(state));
+        const next = structuredClone(state);
         if (this.currentState !== null) {
-          this.undoStack.push({ state: JSON.parse(JSON.stringify(this.currentState)), label, timestamp: Date.now() });
+          this.undoStack.push({ state: structuredClone(this.currentState), label, timestamp: Date.now() });
           if (this.undoStack.length > this.maxStates) this.undoStack.shift();
         }
         this.redoStack = [];
@@ -32,13 +32,13 @@
       };
       target.undo = function () {
         if (!this.undoStack.length) return null;
-        this.redoStack.push({ state: JSON.parse(JSON.stringify(this.currentState)), label: 'Redo', timestamp: Date.now() });
-        const prev = this.undoStack.pop(); this.currentState = JSON.parse(JSON.stringify(prev.state)); this.notifyListeners(); return prev;
+        this.redoStack.push({ state: structuredClone(this.currentState), label: 'Redo', timestamp: Date.now() });
+        const prev = this.undoStack.pop(); this.currentState = structuredClone(prev.state); this.notifyListeners(); return prev;
       };
       target.redo = function () {
         if (!this.redoStack.length) return null;
-        this.undoStack.push({ state: JSON.parse(JSON.stringify(this.currentState)), label: 'Undo', timestamp: Date.now() });
-        const next = this.redoStack.pop(); this.currentState = JSON.parse(JSON.stringify(next.state)); this.notifyListeners(); return next;
+        this.undoStack.push({ state: structuredClone(this.currentState), label: 'Undo', timestamp: Date.now() });
+        const next = this.redoStack.pop(); this.currentState = structuredClone(next.state); this.notifyListeners(); return next;
       };
     };
     if (mgr.__proFixed) {

@@ -170,5 +170,5 @@ clip: auto;
 white-space: normal;
 background: var(--ui-warn);
 color: var(--ui-bg);
-z-index: 9999;
+z-index: var(--z-modal, 1200);
 }

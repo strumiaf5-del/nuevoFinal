@@ -407,12 +407,37 @@
   padding: 12px;
 }
 .lg-spectrum-stage {
+  background: var(--ui-panel-strong);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+.lg-spectrum-stage {
   position: relative;
   height: 160px;
   background: var(--ui-bg);
   border: 1px solid var(--ui-border);
   border-radius: var(--radius-md);
   overflow: hidden;
+}
+.lg-spectrum-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.lg-waterfall-stage {
+  margin-top: 10px;
+}
+.lg-waterfall-stage .lg-panel-head {
+  margin-bottom: 6px;
+}
+.lg-waterfall-stage canvas {
+  display: block;
+  width: 100%;
+  height: 140px;
+  background: #070c24;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius-md);
 }
 
 /* ── Chain (componente reactivo de masterización) ── */
@@ -685,7 +710,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  z-index: 9999;
+  z-index: var(--z-toast, 1100);
   pointer-events: none;
 }
 

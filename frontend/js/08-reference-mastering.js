@@ -332,6 +332,7 @@ LGMDM.reference.bandEQ = (function() {
     const status = LGMDM.dom.requireById("rp-status", "08-reference-mastering");
     if (status) status.textContent = "";
   }
+  referenceApi.stopRefPreview = stopRefPreview;
 
   async function launchRefPreview() {
     stopRefPreview();

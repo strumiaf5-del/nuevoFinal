@@ -9,7 +9,8 @@
 
 (function (global) {
   "use strict";
-  const proFeatures = global.LGMDM = global.LGMDM || {};
+  global.LGMDM = global.LGMDM || {};
+  const proFeatures = global.LGMDM.proFeatures = global.LGMDM.proFeatures || {};
 
   function renderWaterfallTab(container) {
     if (typeof global._lgmdmRenderWaterfallTab === "function") {

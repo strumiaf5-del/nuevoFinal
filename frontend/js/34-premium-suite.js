@@ -621,8 +621,8 @@
       if (typeof window.LGMDM?.ab?.setMode === 'function') {
         try { window.LGMDM.ab.setMode(targetMode); } catch (_) {}
       }
-      if (typeof window.LGMDM?.console?.setAB === 'function') {
-        try { window.LGMDM.masterConsole.setAB(targetMode); } catch (_) {}
+      if (typeof window.LGMDM?.masterConsole?.setAB === 'function' || typeof window.LGMDM?.console?.setAB === 'function') {
+        try { (window.LGMDM.masterConsole || window.LGMDM.console).setAB(targetMode); } catch (_) {}
       }
 
       try {
@@ -1566,7 +1566,7 @@
     const apiBase = window.safeApiBase();
     const token = (typeof LGMDM !== 'undefined' && LGMDM.api && typeof LGMDM.api.authToken === 'function')
       ? LGMDM.api.authToken()
-      : (sessionStorage.getItem('master_auth_token') || '');
+      : (sessionStorage.getItem((typeof LGMDM !== 'undefined' && LGMDM.TOKEN_KEY) || 'master_auth_token') || '');
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
 

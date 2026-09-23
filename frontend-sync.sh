@@ -100,6 +100,7 @@ RSYNC_ARGS=(
     --exclude='*.log'
     --exclude='.cache/**'
     --exclude='tools/'             # scripts dev — no va al docroot
+    --exclude='audit/'             # informes internos — no publicar en docroot
 )
 
 if [[ $DELETE -eq 1 ]]; then

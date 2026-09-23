@@ -272,7 +272,7 @@
 
     const token = (typeof LGMDM !== 'undefined' && LGMDM.api && typeof LGMDM.api.authToken === 'function')
       ? LGMDM.api.authToken()
-      : (sessionStorage.getItem('master_auth_token') || '');
+      : (sessionStorage.getItem((typeof LGMDM !== 'undefined' && LGMDM.TOKEN_KEY) || 'master_auth_token') || '');
     const apiBase = window.safeApiBase();
 
     try {

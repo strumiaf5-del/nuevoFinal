@@ -152,7 +152,7 @@
   }
 
   // ── FIX 1: Live metrics polling (GR + LUFS bars) ─────────────────────────
-  // Polls /preview/telemetry/{source_id} every METRICS_POLL_MS while preview
+  // Polls /preview/meters/{source_id} every METRICS_POLL_MS while preview
   // is active. Publishes to LGMDM.metrics so 10-meters-dashboard shows
   // multiband GR / comp / glue / parallel GR bars + LUFS meter.
   async function pollMetrics() {
@@ -161,7 +161,7 @@
       return;
     }
     try {
-      const res = await LG.api.apiFetch(`${LG.api.apiBase()}/preview/telemetry/${encodeURIComponent(previewSourceId)}`, {
+      const res = await LG.api.apiFetch(`${LG.api.apiBase()}/preview/meters/${encodeURIComponent(previewSourceId)}`, {
         method: 'GET',
         timeout: 5000,
         maxRetries: 0
@@ -341,7 +341,7 @@
         let telemetry = null;
         if (previewId) {
           try {
-            const telemetryRes = await LG.api.apiFetch(`${LG.api.apiBase()}/preview/telemetry/${encodeURIComponent(previewId)}`, {
+            const telemetryRes = await LG.api.apiFetch(`${LG.api.apiBase()}/preview/meters/${encodeURIComponent(previewId)}`, {
               method:'GET', signal:current.controller.signal, timeout:10000, maxRetries:0
             });
             if (telemetryRes.ok) telemetry = await telemetryRes.json();

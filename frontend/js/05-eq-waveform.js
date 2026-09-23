@@ -135,6 +135,7 @@
   };
 
   // Exponer la función globalmente
+  window.computeEQCurve = computeEQCurve;
 })();
 
 // ── Funciones existentes ──────────────────────────────────────
