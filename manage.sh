@@ -1,34 +1,17 @@
 #!/usr/bin/env bash
 # ════════════════════════════════════════════════════════════
 # manage.sh — Service manager interactivo para LGMDM
-# USO INTERACTIVO (REPL):
-#   sudo manage                          # entra al REPL con prompt 'manage>'
-#   sudo manage --interactive             # alias -i (forza interactivo)
+# USO INTERACTIVO (menú numerado):
+#   sudo manage                          # entra al menú
+#   sudo manage -i | --interactive       # alias
 #
 # USO DIRECTO (subcommand):
 #   sudo manage <service> <action> [opts]
-#   sudo manage status                   (resumen de todo)
-#   sudo manage --help                   (esta ayuda)
+#   sudo manage status
+#   sudo manage --help
 #
 # El script vive en /root/nuevoFinal/manage.sh pero hay un symlink
 # en /usr/local/bin/manage — funciona globalmente sin path.
-#
-# Servicios:
-#   backend    FastAPI (uvicorn) en 127.0.0.1:8000
-#   caddy      Web server (HTTPS + reverse proxy)
-#   frontend   Static files en /var/www/masteringstudio/
-#   duckdns    DuckDNS update timer (systemd)
-#
-# Acciones por servicio:
-#   start      Iniciar
-#   stop       Detener (pide confirmación salvo -y/--yes)
-#   restart    stop + start (pide confirmación salvo -y/--yes)
-#   status     Estado actual (PID, puerto, log reciente)
-#   logs [N]   tail -F de las últimas N líneas (default 50, N=0 = follow)
-#   sync       (solo frontend) rsync src → /var/www/masteringstudio/
-#
-# En modo REPL también hay comandos globales:
-#   help, quit, exit, q, clear, status
 # ════════════════════════════════════════════════════════════
 
 set -uo pipefail
@@ -61,47 +44,33 @@ C_BLUE="\033[1;34m"; C_BOLD="\033[1m"; C_RESET="\033[0m"
 
 usage() {
   cat <<'EOF'
-Usage (directo):
+Usage (interactivo — menú numerado):
+  sudo manage                          # abre el menú interactivo
+  sudo manage -i | --interactive
+
+Usage (directo — subcommand):
   sudo manage <service> <action> [opts]
   sudo manage status
   sudo manage --help
 
-Usage (interactivo — REPL):
-  sudo manage                          # prompt 'manage> ', escribís comandos
-  sudo manage -i | --interactive        # alias para forzar modo interactivo
-
 Services: backend | caddy | frontend | duckdns
 Actions:  start | stop | restart | status | logs [N] | sync (frontend only)
 
-Opciones globales:
+Opciones:
   -y, --yes     No pedir confirmación en stop/restart
   -h, --help    Mostrar esta ayuda
   -f, --follow  Para logs: seguir agregando líneas (N=0)
-  -i, --interactive  Forzar modo REPL
+  -i, --interactive  Forzar menú interactivo
 
-En REPL también funcionan comandos globales:
-  help | quit | exit | q | clear | status
-
-Ejemplos:
+Ejemplos directos:
   sudo manage status
   sudo manage backend start
   sudo manage caddy restart -y
   sudo manage frontend sync --delete
   sudo manage backend logs 100
-  sudo manage duckdns status
 
-Modo interactivo (REPL):
-  $ sudo manage
-  manage — modo interactivo. Escribí help para ver comandos, quit para salir.
-  manage> backend start
-  manage> caddy logs 50
-  manage> status
-  manage> quit
-
-Nota: 'manage' es symlink en /usr/local/bin/ que apunta a
-/root/nuevoFinal/manage.sh. Otros scripts disponibles globalmente:
-  frontend-sync   /root/nuevoFinal/frontend-sync.sh
-  install-duckdns /root/nuevoFinal/install-duckdns.sh
+Nota: 'manage' es symlink en /usr/local/bin/ → /root/nuevoFinal/manage.sh
+Otros scripts globales: frontend-sync, install-duckdns
 EOF
 }
 
@@ -418,39 +387,83 @@ dispatch() {
 ASSUME_YES=false
 FOLLOW=0
 
-# ── Modo interactivo (REPL) ───────────────────────────────────────────────────
-# Cuando se invoca sin argumentos (o con -i/--interactive), entra en un
-# loop que prompt 'manage> ' y dispatcha cada línea como si fuera argv.
+# ── Modo interactivo (menú numerado) ────────────────────────────────────────
+# Cuando se invoca sin argumentos (o con -i/--interactive), muestra un
+# menú numerado. Elige una opción con el número correspondiente.
 
 interactive_mode() {
-  echo -e "${C_BOLD}manage${C_RESET} — modo interactivo. Escribí ${C_BOLD}help${C_RESET} para ver comandos, ${C_BOLD}quit${C_RESET} para salir."
-  echo ""
-  local line cmd
-  while :; do
-    # Si stdin no es TTY (pipe/cron), salimos. La idea es que el modo
-    # interactivo requiere terminal humano.
-    if [ ! -t 0 ]; then
-      warn "stdin no es TTY — saliendo del modo interactivo. Usá 'manage <svc> <action>' directamente."
-      return 0
-    fi
-    read -r -e -p "$(echo -ne "${C_BLUE}manage>${C_RESET} ")" line || break
-    # Trim
-    line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
-    [ -z "$line" ] && continue
+  # No hay TTY → no podemos mostrar menú interactivo
+  if [ ! -t 0 ]; then
+    warn "stdin no es TTY — el menú interactivo requiere terminal."
+    warn "Usá 'manage <svc> <action>' directamente."
+    return 0
+  fi
 
-    # Comandos globales del REPL
-    case "$line" in
-      quit|exit|q|:q) echo "Chau."; return 0 ;;
-      help|-h|--help) usage ;;
-      clear|cls) printf '\033[2J\033[H' ;;
-      status|all) service_status ;;
-      *) # Despachar como subcommand
-         # Shell parse: split por whitespace
-         cmd=( $line )
-         dispatch "${cmd[0]}" "${cmd[1]}" "${cmd[@]:2}"
-         ;;
-    esac
+  local choice
+  while :; do
+    printf '\033[2J\033[H'  # clear
+    echo -e "${C_BOLD}══════════════════════════════════════════════════${C_RESET}"
+    echo -e "${C_BOLD}  LGMDM — Service Manager${C_RESET}"
+    echo -e "${C_BOLD}══════════════════════════════════════════════════${C_RESET}"
     echo ""
+    echo -e "  ${C_BOLD}BACKEND (FastAPI :8000)${C_RESET}"
+    echo -e "    ${C_GREEN}1${C_RESET}) Iniciar backend"
+    echo -e "    ${C_GREEN}2${C_RESET}) Detener backend"
+    echo -e "    ${C_GREEN}3${C_RESET}) Reiniciar backend"
+    echo -e "    ${C_GREEN}4${C_RESET}) Estado backend"
+    echo -e "    ${C_GREEN}5${C_RESET}) Ver logs backend"
+    echo ""
+    echo -e "  ${C_BOLD}CADDY (HTTPS reverse proxy)${C_RESET}"
+    echo -e "    ${C_YELLOW}6${C_RESET}) Iniciar caddy"
+    echo -e "    ${C_YELLOW}7${C_RESET}) Detener caddy"
+    echo -e "    ${C_YELLOW}8${C_RESET}) Reiniciar caddy"
+    echo -e "    ${C_YELLOW}9${C_RESET}) Estado caddy"
+    echo -e "    ${C_YELLOW}10${C_RESET}) Ver logs caddy"
+    echo ""
+    echo -e "  ${C_BOLD}FRONTEND (static files)${C_RESET}"
+    echo -e "    ${C_BLUE}11${C_RESET}) Sincronizar frontend a /var/www"
+    echo -e "    ${C_BLUE}12${C_RESET}) Estado frontend"
+    echo ""
+    echo -e "  ${C_BOLD}DUCKDNS (DDNS timer)${C_RESET}"
+    echo -e "    ${C_RED}13${C_RESET}) Iniciar timer DuckDNS"
+    echo -e "    ${C_RED}14${C_RESET}) Detener timer DuckDNS"
+    echo -e "    ${C_RED}15${C_RESET}) Estado DuckDNS"
+    echo -e "    ${C_RED}16${C_RESET}) Ver logs DuckDNS"
+    echo ""
+    echo -e "  ${C_BOLD}GENERAL${C_RESET}"
+    echo -e "    ${C_BOLD}17${C_RESET}) Estado de todos los servicios"
+    echo ""
+    echo -e "    ${C_RED}0${C_RESET}) Salir"
+    echo ""
+    echo -e "${C_BOLD}══════════════════════════════════════════════════${C_RESET}"
+
+    read -r -p "  Elegí una opción: " choice || break
+
+    case "$choice" in
+      0)  echo ""; echo "  Chau."; return 0 ;;
+      1)  require_root; backend_start ;;
+      2)  require_root; confirm "¿Detener backend?" && backend_stop ;;
+      3)  require_root; confirm "¿Reiniciar backend?" && { backend_stop; sleep 1; backend_start; } ;;
+      4)  echo ""; backend_status ;;
+      5)  echo ""; backend_logs 50; echo ""; read -r -p "  Enter para continuar..." _ ;;
+      6)  require_root; caddy_start ;;
+      7)  require_root; confirm "¿Detener caddy?" && caddy_stop ;;
+      8)  require_root; confirm "¿Reiniciar caddy?" && { caddy_stop; sleep 1; caddy_start; } ;;
+      9)  echo ""; caddy_status ;;
+      10) echo ""; caddy_logs 50; echo ""; read -r -p "  Enter para continuar..." _ ;;
+      11) require_root; frontend_sync --delete ;;
+      12) echo ""; frontend_status ;;
+      13) require_root; duckdns_start ;;
+      14) require_root; confirm "¿Detener timer DuckDNS?" && duckdns_stop ;;
+      15) echo ""; duckdns_status ;;
+      16) echo ""; duckdns_logs 50; echo ""; read -r -p "  Enter para continuar..." _ ;;
+      17) service_status ;;
+      *)  echo ""; warn "Opción inválida: $choice" ;;
+    esac
+
+    echo ""
+    [ "$choice" != "5" ] && [ "$choice" != "10" ] && [ "$choice" != "16" ] && \
+      read -r -p "  Enter para volver al menú..." _ || true
   done
   return 0
 }
