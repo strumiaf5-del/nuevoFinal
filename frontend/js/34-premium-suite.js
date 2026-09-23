@@ -1261,7 +1261,7 @@
           <div>
             <strong class="pro-card-title">📁 Archivo de Audio</strong>
             <p class="pro-caption-muted">
-              Pista actual: <span id="codecCurrentFile" class="pro-current-file">${getSelectedFile() ? getSelectedFile().name : 'Ningún archivo cargado en consola'}</span>
+              Pista actual: <span id="codecCurrentFile" class="pro-current-file">${getSelectedFile() ? window.LGMDM.ui.escapeHtml(getSelectedFile().name) : 'Ningún archivo cargado en consola'}</span>
             </p>
           </div>
           <button class="pro-primary" id="btnRunCodec" style="padding: 8px 18px;">⚡ Procesar Códec</button>
