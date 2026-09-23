@@ -223,3 +223,10 @@ __marimo__/
 
 # Runtime state dirs (creados por el server en operación)
 data/
+
+# Deprecation graveyard — archivos removidos del path activo pero
+# preservados localmente para referencia histórica. NO se commitea nada
+# adentro (cada vez que se mueve algo acá, queda fuera del repo).
+# El nombre y la convención están documentados en
+# frontend/_deprecated/README.md.
+frontend/_deprecated/
