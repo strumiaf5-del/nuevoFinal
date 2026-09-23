@@ -23,6 +23,10 @@ BACKEND_PIDFILE="/var/run/lgmdm-backend.pid"
 BACKEND_LOG="/var/log/lgmdm-backend.log"
 BACKEND_HOST="127.0.0.1"
 BACKEND_PORT="8000"
+BACKEND_UNIT="lgmdm-backend.service"
+CADDY_UNIT="caddy.service"
+BACKEND_UNIT="lgmdm-backend.service"
+CADDY_UNIT="caddy.service"
 
 CADDY_BIN="/usr/bin/caddy"
 CADDY_CONF="/etc/caddy/Caddyfile"
@@ -116,6 +120,12 @@ backend_pid() {
 }
 
 backend_is_running() {
+  # Fuente de verdad: systemd (si la unit existe). Fallback: PID file legacy.
+  if systemctl list-unit-files "$BACKEND_UNIT" >/dev/null 2>&1 \
+     && systemctl cat "$BACKEND_UNIT" >/dev/null 2>&1; then
+    systemctl is-active --quiet "$BACKEND_UNIT"
+    return $?
+  fi
   local pid; pid=$(backend_pid)
   [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
 }
@@ -125,6 +135,22 @@ backend_start() {
     warn "Backend ya está corriendo (PID $(backend_pid))"
     return 0
   fi
+  # Ruta systemd (preferida — auto-restart + boot)
+  if systemctl cat "$BACKEND_UNIT" >/dev/null 2>&1; then
+    log "Arrancando backend (systemd: $BACKEND_UNIT)..."
+    systemctl start "$BACKEND_UNIT"
+    sleep 1
+    if systemctl is-active --quiet "$BACKEND_UNIT"; then
+      local pid; pid=$(systemctl show -p MainPID --value "$BACKEND_UNIT")
+      echo "$pid" > "$BACKEND_PIDFILE" 2>/dev/null || true
+      ok "Backend arrancado (PID $pid, log: $BACKEND_LOG)"
+      return 0
+    fi
+    err "Backend falló al arrancar (systemd). Últimas líneas:"
+    journalctl -u "$BACKEND_UNIT" -n 15 --no-pager >&2
+    return 1
+  fi
+  # Fallback legacy nohup (sin unit)
   if [ ! -x "$BACKEND_BIN" ]; then
     err "uvicorn no encontrado: $BACKEND_BIN"
     return 1
@@ -154,6 +180,14 @@ backend_stop() {
     rm -f "$BACKEND_PIDFILE"
     return 0
   fi
+  if systemctl cat "$BACKEND_UNIT" >/dev/null 2>&1 \
+     && systemctl is-active --quiet "$BACKEND_UNIT"; then
+    log "Deteniendo backend (systemd: $BACKEND_UNIT)..."
+    systemctl stop "$BACKEND_UNIT"
+    rm -f "$BACKEND_PIDFILE"
+    ok "Backend detenido"
+    return 0
+  fi
   local pid; pid=$(backend_pid)
   log "Deteniendo backend (PID $pid)..."
   kill -TERM "$pid" 2>/dev/null || true
@@ -172,8 +206,13 @@ backend_stop() {
 backend_status() {
   if backend_is_running; then
     local pid; pid=$(backend_pid)
+    if [ -z "$pid" ] && systemctl cat "$BACKEND_UNIT" >/dev/null 2>&1; then
+      pid=$(systemctl show -p MainPID --value "$BACKEND_UNIT")
+    fi
     local port; port=$(ss -tlnp 2>/dev/null | grep ":$BACKEND_PORT " | head -1 | awk '{print $1}')
-    ok "Backend ${C_GREEN}running${C_RESET} (PID $pid, $BACKEND_HOST:$BACKEND_PORT $port)"
+    local via="nohup"
+    systemctl is-active --quiet "$BACKEND_UNIT" 2>/dev/null && via="systemd"
+    ok "Backend ${C_GREEN}running${C_RESET} (PID $pid, $via, $BACKEND_HOST:$BACKEND_PORT $port)"
   else
     err "Backend ${C_RED}stopped${C_RESET}"
   fi
@@ -193,10 +232,17 @@ backend_logs() {
 # ── CADDY ───────────────────────────────────────────────────────────────────
 
 caddy_is_running() {
-  pgrep -f "caddy run --config $CADDY_CONF" > /dev/null 2>&1
+  # Fuente de verdad: systemd; fallback pgrep para huérfanos legacy.
+  systemctl is-active --quiet "$CADDY_UNIT" 2>/dev/null && return 0
+  pgrep -f "caddy run --config $CADDY_CONF" > /dev/null 2>&1 \
+    || pgrep -f "caddy run --environ --config $CADDY_CONF" > /dev/null 2>&1
 }
 
 caddy_pid() {
+  if systemctl is-active --quiet "$CADDY_UNIT" 2>/dev/null; then
+    systemctl show -p MainPID --value "$CADDY_UNIT"
+    return
+  fi
   pgrep -f "caddy run --config $CADDY_CONF" | head -1
 }
 
@@ -205,19 +251,14 @@ caddy_start() {
     warn "Caddy ya está corriendo (PID $(caddy_pid))"
     return 0
   fi
-  log "Arrancando caddy..."
-  if [ -x "$CADDY_WRAPPER" ]; then
-    bash "$CADDY_WRAPPER" 2>&1 | tail -5
-  else
-    nohup "$CADDY_BIN" run --config "$CADDY_CONF" >> "$CADDY_LOG" 2>&1 < /dev/null &
-    disown 2>/dev/null || true
-  fi
+  log "Arrancando caddy (systemd: $CADDY_UNIT)..."
+  systemctl start "$CADDY_UNIT"
   sleep 2
   if caddy_is_running; then
     ok "Caddy arrancado (PID $(caddy_pid))"
   else
-    err "Caddy falló al arrancar. Últimas líneas del log:"
-    tail -10 "$CADDY_LOG" >&2
+    err "Caddy falló al arrancar. journal:"
+    journalctl -u "$CADDY_UNIT" -n 15 --no-pager >&2
     return 1
   fi
 }
@@ -229,6 +270,11 @@ caddy_stop() {
   fi
   local pid; pid=$(caddy_pid)
   log "Deteniendo caddy (PID $pid)..."
+  if systemctl is-active --quiet "$CADDY_UNIT" 2>/dev/null; then
+    systemctl stop "$CADDY_UNIT"
+    ok "Caddy detenido"
+    return 0
+  fi
   kill -TERM "$pid" 2>/dev/null || true
   for _ in 1 2 3 4 5; do
     kill -0 "$pid" 2>/dev/null || break
@@ -245,15 +291,25 @@ caddy_status() {
   if caddy_is_running; then
     local pid; pid=$(caddy_pid)
     local ports; ports=$(ss -tlnp 2>/dev/null | grep -E ":(80|443)\b" | wc -l)
-    ok "Caddy ${C_GREEN}running${C_RESET} (PID $pid, ports 80/443 listening: $ports)"
+    local via="systemd"
+    systemctl is-active --quiet "$CADDY_UNIT" 2>/dev/null || via="huérfano"
+    ok "Caddy ${C_GREEN}running${C_RESET} (PID $pid, $via, ports 80/443 listening: $ports)"
   else
     err "Caddy ${C_RED}stopped${C_RESET}"
   fi
 }
 
 caddy_logs() {
-  if [ ! -s "$CADDY_LOG" ]; then err "log vacío: $CADDY_LOG"; return 1; fi
   local n="${1:-50}"
+  if systemctl is-active --quiet "$CADDY_UNIT" 2>/dev/null; then
+    if [ "$n" = "0" ] || [ "${FOLLOW:-0}" = "1" ]; then
+      journalctl -u "$CADDY_UNIT" -n 0 -f
+    else
+      journalctl -u "$CADDY_UNIT" -n "$n" --no-pager
+    fi
+    return 0
+  fi
+  if [ ! -s "$CADDY_LOG" ]; then err "log vacío: $CADDY_LOG"; return 1; fi
   if [ "$n" = "0" ] || [ "${FOLLOW:-0}" = "1" ]; then
     tail -F "$CADDY_LOG"
   else
