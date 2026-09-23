@@ -763,7 +763,7 @@
         const isPlaying = (current === slot);
         btn.classList.toggle('active', isPlaying);
         if (isPlaying) {
-          btn.style.outline = '2px solid var(--ui-accent, #52f2bd)';
+          btn.style.outline = '2px solid var(--ui-accent)';
           btn.style.boxShadow = '0 0 14px rgba(82, 242, 189, 0.45)';
           btn.textContent = `🔊 ${label} (Activo)`;
         } else {
@@ -3232,7 +3232,7 @@
         btn.id = 'btnOpenPremiumSuite';
         btn.type = 'button';
         btn.className = 'header-btn';
-        btn.style.cssText = 'width: auto; padding: 0 10px; font-weight: 800; font-size: 10px; color: var(--ui-accent, #52f2bd); display: flex; align-items: center; gap: 5px; cursor: pointer;';
+        btn.style.cssText = 'width: auto; padding: 0 10px; font-weight: 800; font-size: 10px; color: var(--ui-accent); display: flex; align-items: center; gap: 5px; cursor: pointer;';
         btn.innerHTML = '<span>💎</span><span>PRO</span>';
         btn.title = 'Suite de Funciones Premium (22 herramientas avanzadas)';
         headerRight.prepend(btn);

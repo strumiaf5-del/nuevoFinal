@@ -182,26 +182,16 @@
     let lastError = null;
 
     for (let attempt = 0; attempt <= (retryableMethod ? maxRetries : 0); attempt += 1) {
-      const controller = timeoutMs > 0 ? new AbortController() : null;
-      let timeoutId = null;
-      let externalAbortHandler = null;
+      // P2 modernization: AbortSignal.timeout + AbortSignal.any reemplazan el
+      // AbortController manual + setTimeout. La razón y la limpieza del
+      // timer las maneja el browser — menos código, menos bugs.
+      const timeoutSignal = timeoutMs > 0 ? AbortSignal.timeout(timeoutMs) : null;
+      const signal = (timeoutSignal && externalSignal) ? AbortSignal.any([timeoutSignal, externalSignal])
+                   : timeoutSignal || externalSignal || null;
 
       try {
         const requestOptions = { ...opts };
-        if (!controller && externalSignal) {
-          requestOptions.signal = externalSignal;
-        }
-        if (controller) {
-          timeoutId = global.setTimeout(() => controller.abort(new DOMException('Request timed out', 'TimeoutError')), timeoutMs);
-          if (externalSignal) {
-            if (externalSignal.aborted) controller.abort(externalSignal.reason);
-            else {
-              externalAbortHandler = () => controller.abort(externalSignal.reason);
-              externalSignal.addEventListener('abort', externalAbortHandler, { once: true });
-            }
-          }
-          requestOptions.signal = controller.signal;
-        }
+        if (signal) requestOptions.signal = signal;
 
         const response = await rawFetch(target, requestOptions);
         if (!RETRYABLE_STATUSES.has(response.status) || attempt >= maxRetries || !retryableMethod) {
@@ -216,11 +206,6 @@
         const retryableError = retryableMethod && attempt < maxRetries && error?.name !== 'AbortError' && error?.name !== 'TimeoutError';
         if (!retryableError) throw error;
         await new Promise((resolve) => global.setTimeout(resolve, 500 * (2 ** attempt)));
-      } finally {
-        if (timeoutId !== null) global.clearTimeout(timeoutId);
-        if (externalSignal && externalAbortHandler) {
-          externalSignal.removeEventListener('abort', externalAbortHandler);
-        }
       }
     }
 

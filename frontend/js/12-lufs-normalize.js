@@ -13,8 +13,8 @@
   function setStatus(text, kind) {
     if (!statusEl) return;
     statusEl.textContent = text;
-    statusEl.style.color = kind === "error" ? "var(--ui-danger, #f87171)"
-                          : kind === "ok" ? "var(--ui-good, #34d399)"
+    statusEl.style.color = kind === "error" ? "var(--ui-danger)"
+                          : kind === "ok" ? "var(--ui-good)"
                           : "var(--ui-muted)";
   }
 

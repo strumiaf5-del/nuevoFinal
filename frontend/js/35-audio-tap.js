@@ -41,6 +41,27 @@
   ];
 
   function ensureAudioTap() {
+    // JS-M-15: detectar tap stale antes de reusar el cache. Si el AudioContext
+    // cerró (page reload, engine restart) o la instancia de masterGain cambió,
+    // el source cacheado apunta a un nodo muerto. Resetear y rebuild en vez
+    // de devolver el tap zombie.
+    if (_audioTap.ready) {
+      const ctxState = _audioTap.ctx && _audioTap.ctx.state;
+      if (ctxState === 'closed' || ctxState === undefined) {
+        teardownAudioTap();
+      } else {
+        const currentMaster = LG?.mixerEngine?.previewEngine?.masterGain;
+        if (_audioTap.sourceType === 'mixer' && currentMaster && currentMaster !== _audioTap.source) {
+          teardownAudioTap();
+        } else if (_audioTap.sourceType === 'media-element') {
+          const el = document.querySelector('#previewAudioWrap audio[data-preview-ready="true"]')
+                  || document.querySelector('#previewAudioWrap audio');
+          if (el && _audioTap.sourceEl && el !== _audioTap.sourceEl) {
+            teardownAudioTap();
+          }
+        }
+      }
+    }
     if (_audioTap.ready) return _audioTap;
 
     const mixerMaster = LG?.mixerEngine?.previewEngine?.masterGain;

@@ -192,7 +192,7 @@
             <strong class="pro-card-title" style="font-size:.78rem;">
               ⚡ Multiband Transient Designer
             </strong>
-            <span style="font-size:.6rem;color:var(--ui-muted,#9ba6c4);">
+            <span style="font-size:.6rem;color:var(--ui-muted);">
               Per-band envelope shaping · 3 bandas
             </span>
           </div>
@@ -204,7 +204,7 @@
 
           <div class="pro-control-row" style="display:grid;grid-template-columns:140px 1fr 90px;
                                               align-items:center;gap:.8rem;margin:.4rem 0 0;">
-            <label for="mtw-amount-${u}" style="font-size:.72rem;color:var(--ui-muted,#9ba6c4);">Amount</label>
+            <label for="mtw-amount-${u}" style="font-size:.72rem;color:var(--ui-muted);">Amount</label>
             <input type="range" id="mtw-amount-${u}" min="0" max="100" step="1" value="${amountPct}"
                    style="width:100%;" aria-label="Amount">
             <output id="mtw-amount-val-${u}"

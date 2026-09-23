@@ -394,10 +394,7 @@
     }
 
     // Validar sesión previa con el backend
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 4000);
-
-    LGMDM.api.apiFetch('/auth/me', { signal: controller.signal })
+    LGMDM.api.apiFetch('/auth/me', { signal: AbortSignal.timeout(4000) })
       .then(async res => {
         if (res.ok) {
           onAuthenticated(user);
@@ -410,8 +407,7 @@
       .catch(() => {
         clearSession();
         window.location.replace('login.html');
-      })
-      .finally(() => window.clearTimeout(timeoutId));
+      });
   }
 
   // Esperar a que el DOM esté listo

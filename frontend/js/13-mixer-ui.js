@@ -385,8 +385,8 @@
       <button class="btn btn-sm" id="mixerAddStemBtn" type="button" aria-label="Añadir stem">＋ Stem</button>
       <button class="btn btn-sm" id="mixerAddMultiBtn" type="button" aria-label="Añadir múltiples archivos">📂 Multi</button>
       <button class="btn btn-sm" id="mixerLibraryBtn" type="button" aria-label="Abrir librería">📚 Librería</button>
-      <input type="file" id="mixerFileInput" accept=".wav,.mp3,.flac,.ogg,.aiff,.aif" class="lgjs-s-6b99de8b" aria-label="Archivo de audio">
-      <input type="file" id="mixerMultiInput" accept=".wav,.mp3,.flac,.ogg,.aiff,.aif" multiple class="lgjs-s-6b99de8b" aria-label="Múltiples archivos de audio">
+      <input type="file" id="mixerFileInput" accept=".wav,.mp3,.flac,.ogg,.aiff,.aif" class="lgjs-hidden-file-input" aria-label="Archivo de audio">
+      <input type="file" id="mixerMultiInput" accept=".wav,.mp3,.flac,.ogg,.aiff,.aif" multiple class="lgjs-hidden-file-input" aria-label="Múltiples archivos de audio">
       <span class="mxr-title-tag" aria-hidden="true">🎚 ${stemCount} stem${stemCount!==1?'s':''}</span>
       <div class="mxr-transport" id="mxrTransport" style="${stemCount ? 'display:flex' : 'display:none'}">
         <button class="btn btn-sm" id="mxrPlayBtn" type="button" title="Preview en vivo (client-side)" aria-label="Reproducir preview en vivo">▶</button>
@@ -1173,12 +1173,12 @@ function requireChannelChild(parent, selector, owner) {
     overlay.setAttribute('aria-label', 'Confirmar limpieza de stems');
     overlay.style.cssText = 'position:fixed;inset:0;z-index:var(--z-modal,12000);background:rgba(8,11,20,0.78);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:1rem;box-sizing:border-box;';
     overlay.innerHTML = `
-      <div class="lgmdm-modal-panel" style="background:var(--ui-surface-2,#13192a);border:1px solid var(--ui-border,#2a3147);border-radius:var(--radius,10px);padding:1.2rem 1.4rem;max-width:380px;width:100%;color:var(--ui-text,#f4f7ff);font-family:var(--sans);box-shadow:0 12px 40px rgba(0,0,0,0.55);">
-        <h2 style="margin:0 0 0.6rem;font-size:1rem;color:var(--ui-warn,#ffbd4a);">⚠ Limpiar todos los stems</h2>
-        <p style="margin:0 0 1rem;font-size:0.85rem;line-height:1.45;color:var(--ui-muted,#9ba6c4);">¿Seguro que querés eliminar todos los stems cargados del mixer? Esta acción no se puede deshacer.</p>
+      <div class="lgmdm-modal-panel" style="background:var(--ui-surface-2);border:1px solid var(--ui-border);border-radius:var(--radius,10px);padding:1.2rem 1.4rem;max-width:380px;width:100%;color:var(--ui-text);font-family:var(--sans);box-shadow:0 12px 40px rgba(0,0,0,0.55);">
+        <h2 style="margin:0 0 0.6rem;font-size:1rem;color:var(--ui-warn);">⚠ Limpiar todos los stems</h2>
+        <p style="margin:0 0 1rem;font-size:0.85rem;line-height:1.45;color:var(--ui-muted);">¿Seguro que querés eliminar todos los stems cargados del mixer? Esta acción no se puede deshacer.</p>
         <div style="display:flex;gap:.5rem;justify-content:flex-end;">
-          <button type="button" data-role="cancel" style="padding:.55rem 1rem;border-radius:var(--radius,8px);border:1px solid var(--ui-border,#2a3147);background:transparent;color:var(--ui-text,#f4f7ff);font-weight:600;cursor:pointer;">Cancelar</button>
-          <button type="button" data-role="confirm" autofocus style="padding:.55rem 1rem;border-radius:var(--radius,8px);border:1px solid var(--ui-danger,#ff4264);background:var(--ui-danger,#ff4264);color:#fff;font-weight:700;cursor:pointer;">Sí, limpiar</button>
+          <button type="button" data-role="cancel" style="padding:.55rem 1rem;border-radius:var(--radius,8px);border:1px solid var(--ui-border);background:transparent;color:var(--ui-text);font-weight:600;cursor:pointer;">Cancelar</button>
+          <button type="button" data-role="confirm" autofocus style="padding:.55rem 1rem;border-radius:var(--radius,8px);border:1px solid var(--ui-danger);background:var(--ui-danger);color:#fff;font-weight:700;cursor:pointer;">Sí, limpiar</button>
         </div>
       </div>
     `;

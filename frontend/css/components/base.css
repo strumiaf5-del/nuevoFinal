@@ -48,7 +48,7 @@ font-size: var(--text-xs);
 }
 
 /* Hidden file inputs utility */
-.lgjs-s-6b99de8b {
+.lgjs-hidden-file-input {
 display: none;
 }
 /* Compat wall overlay (migrated from compat-wall.css) */

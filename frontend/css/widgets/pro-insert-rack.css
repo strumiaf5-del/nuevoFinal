@@ -223,8 +223,6 @@
 
 .pir-status { font-family: ui-monospace, monospace; }
 
-/* ── Responsive ── */
-
 /* ── Floating mode ── */
 .pro-insert-rack--floating {
   position: fixed;

@@ -47,13 +47,7 @@
   .chain-family-tab.active {
     color: var(--ui-text, #eef3ff);
     border-color: var(--ui-accent, #42e8ff);
-    background: color-mix(in srgb, var(--ui-accent, #42e8ff) 12%, var(--ui-surface-2));
-  }
-
-  .chain-family-visible {
-    /* Marcador para los nodos visibles de la familia activa.
-       El JS usa node.hidden = true/false, esta clase es opcional
-       y se mantiene por si se quiere animar o skipear por CSS. */
+    background: color-mix(in srgb, var(--ui-accent) 12%, var(--ui-surface-2));
   }
 
   /* ── R2: split vertical 2 columnas ── */

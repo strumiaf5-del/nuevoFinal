@@ -14,46 +14,46 @@
   function createPitchCorrectionOverlay() {
     return `
       <div id="${OVERLAY_ID}" class="lgmdm-modal-overlay" style="display:none; position:fixed; inset:0; z-index:var(--z-modal, 12000); background:rgba(8,11,20,0.85); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:1rem; box-sizing:border-box;">
-        <div id="${PC_PANEL_ID}" class="admin-box" style="width:min(520px, 94vw); max-height:88vh; overflow-y:auto; background:linear-gradient(145deg, #111625, #191c32); border:1px solid rgba(125,232,255,0.25); border-radius:18px; padding:1.5rem; box-shadow:0 24px 60px rgba(0,0,0,0.6); box-sizing:border-box; color:var(--ui-text, #f1f5f9);">
+        <div id="${PC_PANEL_ID}" class="admin-box" style="width:min(520px, 94vw); max-height:88vh; overflow-y:auto; background:linear-gradient(145deg, #111625, #191c32); border:1px solid rgba(125,232,255,0.25); border-radius:18px; padding:1.5rem; box-shadow:0 24px 60px rgba(0,0,0,0.6); box-sizing:border-box; color:var(--ui-text);">
           
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; padding-bottom:0.75rem; border-bottom:1px solid rgba(255,255,255,0.08);">
             <div style="display:flex; align-items:center; gap:0.5rem;">
               <span style="font-size:1.2rem;">🎵</span>
-              <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--ui-text, #f1f5f9);">Pitch Correction</h3>
+              <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--ui-text);">Pitch Correction</h3>
             </div>
-            <button id="pitchCorrectionClose" type="button" aria-label="Cerrar modal" style="width:30px; height:30px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05); color:var(--ui-muted, #94a3b8); cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.18s;">✕</button>
+            <button id="pitchCorrectionClose" type="button" aria-label="Cerrar modal" style="width:30px; height:30px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05); color:var(--ui-muted); cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.18s;">✕</button>
           </div>
 
           <!-- Input File / Library -->
           <div style="margin-bottom:1rem;">
-            <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted, #94a3b8); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Audio Input</label>
-            <div id="pitchCorrectionCurrentFileNotice" style="font-size:0.8rem; color:var(--ui-accent, #52f2bd); margin-bottom:0.4rem;">Pista actual en consola</div>
-            <input type="file" id="pitchCorrectionFile" accept="audio/*" style="display:block; width:100%; box-sizing:border-box; font-size:0.8rem; padding:0.4rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text, #f1f5f9);">
-            <div style="font-size:0.72rem; color:var(--ui-muted, #94a3b8); margin:0.4rem 0 0.25rem;">O seleccionar de biblioteca de stems:</div>
-            <select id="pitchCorrectionLibrary" style="width:100%; box-sizing:border-box; padding:0.5rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text, #f1f5f9); font-size:0.82rem;">
+            <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Audio Input</label>
+            <div id="pitchCorrectionCurrentFileNotice" style="font-size:0.8rem; color:var(--ui-accent); margin-bottom:0.4rem;">Pista actual en consola</div>
+            <input type="file" id="pitchCorrectionFile" accept="audio/*" style="display:block; width:100%; box-sizing:border-box; font-size:0.8rem; padding:0.4rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text);">
+            <div style="font-size:0.72rem; color:var(--ui-muted); margin:0.4rem 0 0.25rem;">O seleccionar de biblioteca de stems:</div>
+            <select id="pitchCorrectionLibrary" style="width:100%; box-sizing:border-box; padding:0.5rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text); font-size:0.82rem;">
               <option value="">— No seleccionada —</option>
             </select>
           </div>
 
           <!-- Mode buttons -->
           <div style="margin-bottom:1rem;">
-            <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted, #94a3b8); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Intensidad de Corrección (Mode)</label>
+            <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Intensidad de Corrección (Mode)</label>
             <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.4rem;" id="pitchModeGroup">
               ${PC_MODES.map(m => `
-                <button type="button" class="pc-mode-btn" data-mode="${m}" ${m === 'MEDIUM' ? 'data-selected="true"' : ''} style="padding:0.5rem; background:${m === 'MEDIUM' ? 'rgba(92,232,255,0.15)' : 'rgba(255,255,255,0.04)'}; border:2px solid ${m === 'MEDIUM' ? 'var(--ui-accent, #42e8ff)' : 'rgba(255,255,255,0.1)'}; border-radius:8px; color:${m === 'MEDIUM' ? '#fff' : 'var(--ui-muted, #94a3b8)'}; cursor:pointer; font-weight:700; font-size:0.78rem; transition:all 0.18s;">
+                <button type="button" class="pc-mode-btn" data-mode="${m}" ${m === 'MEDIUM' ? 'data-selected="true"' : ''} style="padding:0.5rem; background:${m === 'MEDIUM' ? 'rgba(92,232,255,0.15)' : 'rgba(255,255,255,0.04)'}; border:2px solid ${m === 'MEDIUM' ? 'var(--ui-accent)' : 'rgba(255,255,255,0.1)'}; border-radius:8px; color:${m === 'MEDIUM' ? '#fff' : 'var(--ui-muted)'}; cursor:pointer; font-weight:700; font-size:0.78rem; transition:all 0.18s;">
                   ${m}
                 </button>
               `).join('')}
             </div>
-            <div style="font-size:0.7rem; color:var(--ui-muted, #94a3b8); margin-top:0.35rem;">
+            <div style="font-size:0.7rem; color:var(--ui-muted); margin-top:0.35rem;">
               OFF=desactivado · LIGHT=±20¢ · MEDIUM=±50¢ · STRONG=±100¢
             </div>
           </div>
 
           <!-- Scale selector -->
           <div style="margin-bottom:1rem;">
-            <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted, #94a3b8); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Escala / Tonalidad</label>
-            <select id="pitchCorrectionScale" style="width:100%; box-sizing:border-box; padding:0.5rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text, #f1f5f9); font-size:0.82rem;">
+            <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Escala / Tonalidad</label>
+            <select id="pitchCorrectionScale" style="width:100%; box-sizing:border-box; padding:0.5rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text); font-size:0.82rem;">
               <option value="">— Auto-detect —</option>
               <option value="C_major">C Major</option>
               <option value="G_major">G Major</option>
@@ -70,11 +70,11 @@
           <!-- Glide range -->
           <div style="margin-bottom:1rem;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.35rem;">
-              <label style="font-size:0.78rem; font-weight:700; color:var(--ui-muted, #94a3b8); text-transform:uppercase; letter-spacing:0.06em;">Glide Time</label>
-              <span id="pitchCorrectionGlideVal" style="font-size:0.8rem; font-weight:700; color:var(--ui-accent, #42e8ff);">50ms</span>
+              <label style="font-size:0.78rem; font-weight:700; color:var(--ui-muted); text-transform:uppercase; letter-spacing:0.06em;">Glide Time</label>
+              <span id="pitchCorrectionGlideVal" style="font-size:0.8rem; font-weight:700; color:var(--ui-accent);">50ms</span>
             </div>
             <input type="range" id="pitchCorrectionGlide" min="0" max="200" value="50" style="width:100%;">
-            <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--ui-muted, #94a3b8); margin-top:0.2rem;">
+            <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--ui-muted); margin-top:0.2rem;">
               <span>0ms (rápido)</span>
               <span>200ms (suave)</span>
             </div>
@@ -82,8 +82,8 @@
 
           <!-- Format -->
           <div style="margin-bottom:1.2rem;">
-            <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted, #94a3b8); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Formato de Salida</label>
-            <select id="pitchCorrectionFormat" style="width:100%; box-sizing:border-box; padding:0.5rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text, #f1f5f9); font-size:0.82rem;">
+            <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Formato de Salida</label>
+            <select id="pitchCorrectionFormat" style="width:100%; box-sizing:border-box; padding:0.5rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text); font-size:0.82rem;">
               <option value="wav">WAV (24-bit PCM HQ)</option>
               <option value="flac">FLAC</option>
               <option value="mp3">MP3 (320kbps)</option>
@@ -91,7 +91,7 @@
           </div>
 
           <!-- Action Button -->
-          <button id="pitchCorrectionApply" type="button" style="width:100%; padding:0.75rem 1rem; border-radius:var(--radius); border:1px solid var(--ui-border-strong); background:var(--ui-accent); color:var(--ui-text-on-accent, #071018); font-weight:800; font-size:0.95rem; cursor:pointer; box-shadow:var(--shadow-sm); transition:transform 0.18s ease, box-shadow 0.18s ease;">
+          <button id="pitchCorrectionApply" type="button" style="width:100%; padding:0.75rem 1rem; border-radius:var(--radius); border:1px solid var(--ui-border-strong); background:var(--ui-accent); color:var(--ui-text-on-accent); font-weight:800; font-size:0.95rem; cursor:pointer; box-shadow:var(--shadow-sm); transition:transform 0.18s ease, box-shadow 0.18s ease;">
             ✓ Aplicar Pitch Correction
           </button>
 
@@ -102,7 +102,7 @@
             <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
               <div id="pitchCorrectionProgressBar" style="width:100%; height:100%; background:linear-gradient(90deg, #42d9ff, #52f2bd); animation:pcPulse 1.2s infinite ease-in-out;"></div>
             </div>
-            <div style="font-size:0.72rem; color:var(--ui-muted, #94a3b8); text-align:center; margin-top:0.3rem;">Procesando en servidor…</div>
+            <div style="font-size:0.72rem; color:var(--ui-muted); text-align:center; margin-top:0.3rem;">Procesando en servidor…</div>
           </div>
         </div>
       </div>
@@ -132,11 +132,11 @@
         modeBtns.forEach(b => {
           b.style.borderColor = 'rgba(255,255,255,0.1)';
           b.style.background = 'rgba(255,255,255,0.04)';
-          b.style.color = 'var(--ui-muted, #94a3b8)';
+          b.style.color = 'var(--ui-muted)';
           delete b.dataset.selected;
         });
         const target = e.currentTarget;
-        target.style.borderColor = 'var(--ui-accent, #42e8ff)';
+        target.style.borderColor = 'var(--ui-accent)';
         target.style.background = 'rgba(92,232,255,0.15)';
         target.style.color = '#fff';
         target.dataset.selected = 'true';
@@ -243,7 +243,7 @@
 
     if (statusEl) {
       statusEl.textContent = '⏳ Iniciando corrección de pitch…';
-      statusEl.style.color = 'var(--ui-accent, #42e8ff)';
+      statusEl.style.color = 'var(--ui-accent)';
     }
 
     const pickedFile = document.getElementById('pitchCorrectionFile')?.files[0];
@@ -257,7 +257,7 @@
     if (!file && !libraryId) {
       if (statusEl) {
         statusEl.textContent = '❌ Seleccioná un archivo de audio o stem de la biblioteca';
-        statusEl.style.color = 'var(--ui-danger, #ff6b81)';
+        statusEl.style.color = 'var(--ui-danger)';
       }
       return;
     }

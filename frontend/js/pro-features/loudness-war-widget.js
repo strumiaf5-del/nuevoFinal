@@ -116,7 +116,7 @@
                  style="padding:.7rem;border-radius:12px;background:rgba(255,255,255,.025);
                         border:1px solid rgba(255,255,255,.06);">
               <span style="font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;
-                           color:var(--ui-muted,#9ba6c4);">
+                           color:var(--ui-muted);">
                 Análisis
               </span>
               <div id="lwExplain"
@@ -128,7 +128,7 @@
                  style="padding:.7rem;border-radius:12px;background:rgba(255,255,255,.025);
                         border:1px solid rgba(255,255,255,.06);">
               <span style="font-size:.6rem;text-transform:uppercase;letter-spacing:.06em;
-                           color:var(--ui-muted,#9ba6c4);">
+                           color:var(--ui-muted);">
                 Duración total
               </span>
               <div id="lwDuration"
@@ -217,7 +217,7 @@
     getControls() {
       // Loudness War no expone controles interactivos (es vista de timeline).
       return `
-        <div style="font-size:.72rem;color:var(--ui-muted,#9ba6c4);text-align:center;">
+        <div style="font-size:.72rem;color:var(--ui-muted);text-align:center;">
           Visualización de timeline DR — sin controles interactivos.
         </div>
       `;

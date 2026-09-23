@@ -174,7 +174,7 @@
               <button type="button" data-type="${t.id}"
                       style="flex:1;min-width:80px;padding:.45rem .55rem;border-radius:9px;
                              border:1px solid rgba(255,255,255,.08);
-                             background:rgba(255,255,255,.03);color:var(--ui-muted,#9ba6c4);
+                             background:rgba(255,255,255,.03);color:var(--ui-muted);
                              cursor:pointer;font-size:.72rem;">
                 <div style="font-weight:750;">${t.label}</div>
               </button>
@@ -184,7 +184,7 @@
             <button data-role="generate-ir"
                     style="border-radius:10px;padding:.6rem 1.1rem;cursor:pointer;
                            border:1px solid rgba(255,255,255,.12);
-                           background:rgba(255,255,255,.04);color:var(--ui-text,#eef3ff);
+                           background:rgba(255,255,255,.04);color:var(--ui-text);
                            font-weight:750;">
               🌫 Generate IR
             </button>
@@ -292,7 +292,7 @@
         btn.style.borderColor = active
           ? 'rgba(82,242,189,.55)'
           : 'rgba(255,255,255,.08)';
-        btn.style.color = active ? '#dcfbff' : 'var(--ui-muted,#9ba6c4)';
+        btn.style.color = active ? '#dcfbff' : 'var(--ui-muted)';
       });
     }
 

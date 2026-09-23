@@ -157,7 +157,9 @@
     const mode = rack ? (rack.dataset.mode === 'floating' ? 'floating' : 'docked') : 'docked';
     const position = (mode === 'floating' && rack) ? readPosition(rack) : undefined;
     const payload = { order, bypass, minimized, hidden, mode };
-    if (position) payload.position = position;
+    if (position && typeof position.left === 'number' && typeof position.top === 'number') {
+      payload.position = position;
+    }
     saveState(payload);
     updateActiveCount();
   }
