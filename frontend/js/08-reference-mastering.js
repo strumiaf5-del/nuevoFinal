@@ -347,8 +347,8 @@ LGMDM.reference.bandEQ = (function() {
     const params = collectReferenceParamsObj();
     const band_gains_array = LGMDM.reference?.bandEQ ? LGMDM.reference.bandEQ.getGainsArray() : [];
 
-    const wsUrl = await LGMDM.api.wsAuthUrl("/ws/ref-stream");
-    refWs = new WebSocket(wsUrl);
+    const wsHandle = await LGMDM.api.wsAuthHandle("/ws/ref-stream");
+    refWs = new WebSocket(wsHandle.url, wsHandle.protocols);
     refWs.binaryType = "arraybuffer";
 
     let wsChannels = 2, wsSr = 44100;

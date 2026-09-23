@@ -97,20 +97,34 @@
     return `${base}${path.startsWith('/') ? path : `/${path}`}`;
   }
 
-  async function wsAuthUrl(path = '') {
+  async function wsAuthHandle(path = '') {
     if (!authToken()) {
       const err = new Error('Sesión requerida para autorizar WebSocket');
       err.code = 'AUTH_REQUIRED';
       throw err;
     }
-    const target = new URL(wsUrl(path));
+    const url = wsUrl(path);
     const res = await apiFetch('/auth/ws-ticket');
     if (!res.ok) throw new Error(`No se pudo autorizar WebSocket (${res.status})`);
     const data = await res.json();
     if (!data.token || typeof data.token !== 'string') {
       throw new Error('El servidor no devolvió un ticket WebSocket válido');
     }
-    target.searchParams.set('token', data.token);
+    // Mandamos el ticket por Sec-WebSocket-Protocol (slot "lgmdm-ws-ticket.<token>")
+    // y NO por ?token= — el server hace eco de "lgmdm-ws-ticket" en
+    // accept(subprotocol=...) y extrae el token del segundo slot. El token
+    // nunca aparece en la URL: no queda en logs de proxies ni en history.
+    return {
+      url,
+      protocols: ['lgmdm-ws-ticket', data.token],
+      token: data.token,
+    };
+  }
+
+  async function wsAuthUrl(path = '') {
+    const { url, token } = await wsAuthHandle(path);
+    const target = new URL(url);
+    target.searchParams.set('token', token);
     return target.toString();
   }
 
@@ -265,7 +279,7 @@
     delete: (path, options) => request('DELETE', path, options),
   };
 
-  Object.assign(LGMDM.api, { apiBase, apiUrl, wsUrl, wsAuthUrl, authToken, csrfToken, authHeaders, apiFetch, downloadAuthenticated, resolveApiTarget, request, client });
+  Object.assign(LGMDM.api, { apiBase, apiUrl, wsUrl, wsAuthHandle, wsAuthUrl, authToken, csrfToken, authHeaders, apiFetch, downloadAuthenticated, resolveApiTarget, request, client });
 
   const domCache = new Map();
   function cachedEl(id) {

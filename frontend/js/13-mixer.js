@@ -354,12 +354,12 @@ function stemEmoji(t) {
     let sampleRate = 44100, channels = 2;
     try {
       const apiMod = global.LGMDM?.api;
-      const wsAuthFn = apiMod?.wsAuthUrl;
-      if (typeof wsAuthFn !== 'function') throw new Error('LGMDM.api.wsAuthUrl no disponible');
-      const wsUrl = await wsAuthFn('/ws/mix-stream');
+      const wsAuthFn = apiMod?.wsAuthHandle;
+      if (typeof wsAuthFn !== 'function') throw new Error('LGMDM.api.wsAuthHandle no disponible');
+      const wsHandle = await wsAuthFn('/ws/mix-stream');
       await new Promise((resolve, reject) => {
         let resolved = false;
-        const ws = new WebSocket(wsUrl);
+        const ws = new WebSocket(wsHandle.url, wsHandle.protocols);
         serverPreview.ws = ws;
         ws.binaryType = 'arraybuffer';
         ws.onopen = () => {
