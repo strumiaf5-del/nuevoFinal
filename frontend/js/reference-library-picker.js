@@ -5,6 +5,13 @@
 (function (global) {
   "use strict";
   const LGMDM = global.LGMDM = global.LGMDM || {};
+  // ── bindOnce unificado (audit A) ───────────────────────────────────────────
+  // Antes: redeclarado 4 veces dentro de _renderList, _buildModal,
+  // _injectButton e init(). Unica definición a nivel de módulo.
+  const bindOnce = LGMDM.ui?.bindOnce || ((el, type, fn, key, opts) => {
+    el?.addEventListener(type, fn, opts);
+    return true;
+  });
   // ── Estado ────────────────────────────────────────────────────────────────
   let _entries = [];       // lista de referencias indexadas
   let _filtered = [];      // resultado del filtro de búsqueda
@@ -101,7 +108,6 @@
         metaEl.appendChild(span);
       }
       row.append(nameEl, metaEl);
-      const bindOnce = LGMDM.ui?.bindOnce || ((el, type, fn, key, opts) => { el?.addEventListener(type, fn, opts); return true; });
       bindOnce(row, "click", () => _selectEntry(entry), `ref-row-${entry.id}`);
       _listEl.appendChild(row);
     });
@@ -168,7 +174,6 @@
     _listEl      = _modal.querySelector("#refLibList");
     _statusEl    = _modal.querySelector("#refLibStatus");
 
-    const bindOnce = LGMDM.ui?.bindOnce || ((el, type, fn, key, opts) => { el?.addEventListener(type, fn, opts); return true; });
     bindOnce(_modal.querySelector("#refLibClose"), "click", _closeModal, "ref-lib-close");
     bindOnce(_modal.querySelector(".ref-lib-backdrop"), "click", _closeModal, "ref-lib-backdrop-close");
     bindOnce(_searchInput, "input", (e) => _applySearch(e.target.value), "ref-lib-search");
@@ -211,7 +216,6 @@
 
   // ── Botón que abre el modal (se inserta junto al input de referencia) ──────
   function _injectButton() {
-    const bindOnce = LGMDM.ui?.bindOnce || ((el, type, fn, key, opts) => { el?.addEventListener(type, fn, opts); return true; });
     let btn = document.getElementById("btnOpenRefLib");
     if (btn) {
       bindOnce(btn, "click", (e) => { e.preventDefault(); _openModal(); }, "ref-lib-open");
@@ -237,7 +241,6 @@
   // ── Init ──────────────────────────────────────────────────────────────────
   function init() {
     _injectButton();
-    const bindOnce = LGMDM.ui?.bindOnce || ((el, type, fn, key, opts) => { el?.addEventListener(type, fn, opts); return true; });
     // Solo pre-cargamos cuando hay sesión. Si el login ocurre después,
     // el evento de autenticación dispara la carga una sola vez.
     const maybeLoad = () => {

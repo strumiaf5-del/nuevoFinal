@@ -4,8 +4,11 @@
 
   const qs = (s, root = document) => root.querySelector(s);
   const el = (id) => document.getElementById(id);
-  const getSelectedFile = () => window.LGMDM?.state?.getSelectedFile?.() ?? null;
-  const getLastAnalysis = () => window.LGMDM?.state?.getLastAnalysis?.() ?? null;
+  // Audit C: state getters centralizados en window.LGMDM.stateHelpers
+  // (00-state-helpers.js). Antes: wrappers locales de 2 líneas duplicados
+  // en 4 archivos (20-pro-upgrades, 29-analysis-view, 34-premium-suite, + 01-state.js).
+  const getSelectedFile = () => window.LGMDM?.stateHelpers?.getSelectedFile?.() ?? null;
+  const getLastAnalysis = () => window.LGMDM?.stateHelpers?.getLastAnalysis?.() ?? null;
   const bindOnce = window.LGMDM?.ui?.bindOnce || ((el, ev, fn, key, opts) => el?.addEventListener(ev, fn, opts));
 
 

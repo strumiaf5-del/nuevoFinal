@@ -8,19 +8,19 @@
   const NS = (global.LGMDM = global.LGMDM || {});
   NS.proFeatures = NS.proFeatures || {};
 
-  const PALETTE = (() => {
-    if (typeof document === 'undefined') return null;
-    const s = getComputedStyle(document.documentElement);
-    return {
-      good: s.getPropertyValue('--ui-good').trim() || '#45f6b2',
-      warn: s.getPropertyValue('--ui-warn').trim() || '#ffbd4a',
-      danger: s.getPropertyValue('--ui-danger').trim() || '#ff4264',
-      accent: s.getPropertyValue('--ui-accent').trim() || '#23e7ff',
-      text: s.getPropertyValue('--ui-text').trim() || '#f4f7ff',
-      muted: s.getPropertyValue('--ui-muted').trim() || '#8995b0',
-      bg: s.getPropertyValue('--ui-surface').trim() || '#0d1220'
-    };
-  })();
+    // Audit B: PALETTE via window.LGMDM.themeColors() (01-state.js) — caché + auto-refresh al cambiar tema.
+  const PALETTE = (window.LGMDM && typeof window.LGMDM.themeColors === 'function')
+    ? window.LGMDM.themeColors()
+    : {
+        good: '#45f6b2',
+        warn: '#ffbd4a',
+        danger: '#ff4264',
+        accent: '#23e7ff',
+        text: '#f4f7ff',
+        muted: '#8995b0',
+        bg: '#0d1220',
+      };
+
 
   const COLOR_BG = (PALETTE && PALETTE.bg) || '#0d1020';
   const COLOR_GRID = 'rgba(147,164,255,0.10)';
@@ -37,9 +37,9 @@
 
   const LOG_FMIN = logFreq(FMIN);
   const LOG_FMAX = logFreq(FMAX);
-  function _xFreq(f, left, width) { return window.xFromFreq(f, left, width, LOG_FMIN, LOG_FMAX); }
-  function _yDb(db, top, height) { return window.yFromDb(db, top, height, DMIN, DMAX); }
-  function _freqFromX(x, left, width) { return window.freqFromX(x, left, width, LOG_FMIN, LOG_FMAX); }
+
+  // Audit D: aliases locales del namespace freqHelpers (00-state-helpers.js)
+  const freqHelpers = window.LGMDM?.freqHelpers;
 
   class Widget {
     constructor() {
@@ -98,7 +98,7 @@
         const y = e.clientY - rect.top;
         const r = this._plotRect();
         if (x < r.left || x > r.right || y < r.top || y > r.bottom) { this._hover = null; return; }
-        this._hover = { x, y, freq: _freqFromX(x, r.left, r.width) };
+        this._hover = { x, y, freq: freqHelpers.xToFreq(x, r.left, r.width) };
       };
       this._mouseLeave = () => { this._hover = null; };
       this._matchClick = (e) => {
@@ -168,8 +168,8 @@
       for (let i = 0; i < sorted.length; i++) {
         const f = Math.max(FMIN, Math.min(FMAX, sorted[i].freq));
         const db = Math.max(DMIN, Math.min(DMAX, sorted[i].db));
-        const x = _xFreq(f, r.left, r.width);
-        const y = _yDb(db, r.top, r.height);
+        const x = freqHelpers.freqToX(f, r.left, r.width);
+        const y = freqHelpers.dbToY(db, r.top, r.height);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke();
@@ -194,9 +194,9 @@
       bands.forEach((b) => {
         if (!b || !isFinite(b.freq) || !isFinite(b.gain_db)) return;
         const f = Math.max(FMIN, Math.min(FMAX, b.freq));
-        const x = _xFreq(f, r.left, r.width);
-        const y0 = _yDb(0, r.top, r.height);
-        const y = _yDb(Math.max(DMIN, Math.min(DMAX, b.gain_db)), r.top, r.height);
+        const x = freqHelpers.freqToX(f, r.left, r.width);
+        const y0 = freqHelpers.dbToY(0, r.top, r.height);
+        const y = freqHelpers.dbToY(Math.max(DMIN, Math.min(DMAX, b.gain_db)), r.top, r.height);
         ctx.strokeStyle = COLOR_BAND;
         ctx.fillStyle = COLOR_BAND;
         ctx.lineWidth = 1.4;
@@ -282,7 +282,7 @@
 
       const yTicks = [-24, -18, -12, -6, 0, 6, 12, 18, 24];
       yTicks.forEach((db) => {
-        const y = _yDb(db, r.top, r.height);
+        const y = freqHelpers.dbToY(db, r.top, r.height);
         ctx.strokeStyle = db === 0 ? COLOR_AXIS : COLOR_GRID;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -297,7 +297,7 @@
       ctx.textBaseline = 'top';
       ctx.textAlign = 'center';
       xTicks.forEach((f) => {
-        const x = _xFreq(f, r.left, r.width);
+        const x = freqHelpers.freqToX(f, r.left, r.width);
         ctx.beginPath();
         ctx.moveTo(x, r.top);
         ctx.lineTo(x, r.bottom);

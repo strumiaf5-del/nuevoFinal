@@ -169,12 +169,17 @@
   display: grid;
   gap: 10px;
 }
-.pro-flex-between {
+/* Audit F: pares de utility classes con definiciones idénticas consolidadas
+   con selectores comma. .pro-flex-between + .pro-meter-row (idénticas),
+   .pro-flex-between-mb + .pro-doctor-head (idénticas), .pro-flex-center-14
+   + .pro-flex-center-mb (idénticas), .pro-output-row + .pro-codec-output-row
+   (idénticas). */
+.pro-flex-between, .pro-meter-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-.pro-flex-between-mb {
+.pro-flex-between-mb, .pro-doctor-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -199,13 +204,7 @@
   justify-content: center;
   gap: 12px;
 }
-.pro-flex-center-14 {
-  display: flex;
-  justify-content: center;
-  gap: 14px;
-  margin-bottom: 20px;
-}
-.pro-flex-center-mb {
+.pro-flex-center-14, .pro-flex-center-mb {
   display: flex;
   justify-content: center;
   gap: 14px;
@@ -215,7 +214,7 @@
   display: flex;
   gap: 8px;
 }
-.pro-output-row {
+.pro-output-row, .pro-codec-output-row {
   display: flex;
   align-items: center;
   gap: 14px;
@@ -417,11 +416,6 @@
   font-weight: 700;
   margin-top: 3px;
 }
-.pro-meter-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
 .pro-meter-status {
   color: var(--ui-good);
   font-weight: 800;
@@ -605,12 +599,6 @@
   color: var(--ui-muted);
   margin-bottom: 6px;
 }
-.pro-doctor-head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-}
 .pro-status-mini {
   margin-top: 12px;
   font-size: var(--space-4);
@@ -736,13 +724,6 @@
   background: var(--ui-shadow);
   border: 1px solid var(--ui-border);
   padding: 14px;
-}
-.pro-codec-output-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-wrap: wrap;
-  margin-top: 10px;
 }
 .pro-codec-isp-line {
   font-size: 0.75rem;

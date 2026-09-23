@@ -11,8 +11,11 @@
   const LG = global.LGMDM = global.LGMDM || {};
   const el = (id) => document.getElementById(id);
   const escapeHtml = LG.ui?.escapeHtml || ((str) => String(str ?? '').replace(/[&<>"']/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])));
-  const getSelectedFile = () => (typeof LGMDM !== 'undefined' && LGMDM.state?.getSelectedFile?.()) || null;
-  const getLastAnalysis = () => (typeof LGMDM !== 'undefined' && LGMDM.state?.getLastAnalysis?.()) || null;
+  // Audit C: state getters centralizados en window.LGMDM.stateHelpers
+  // (00-state-helpers.js). Antes: wrappers locales de 2 líneas duplicados
+  // en 4 archivos (20-pro-upgrades, 29-analysis-view, 34-premium-suite, + 01-state.js).
+  const getSelectedFile = () => window.LGMDM?.stateHelpers?.getSelectedFile?.() ?? null;
+  const getLastAnalysis = () => window.LGMDM?.stateHelpers?.getLastAnalysis?.() ?? null;
 
   // ── ESTADO DE LA SUITE ───────────────────────────────────────────────
   const state = {

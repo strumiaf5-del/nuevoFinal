@@ -9,19 +9,19 @@
   const NS = (global.LGMDM = global.LGMDM || {});
   NS.proFeatures = NS.proFeatures || {};
 
-  const PALETTE = (() => {
-    if (typeof document === 'undefined') return null;
-    const s = getComputedStyle(document.documentElement);
-    return {
-      good: s.getPropertyValue('--ui-good').trim() || '#45f6b2',
-      warn: s.getPropertyValue('--ui-warn').trim() || '#ffbd4a',
-      danger: s.getPropertyValue('--ui-danger').trim() || '#ff4264',
-      accent: s.getPropertyValue('--ui-accent').trim() || '#23e7ff',
-      text: s.getPropertyValue('--ui-text').trim() || '#f4f7ff',
-      muted: s.getPropertyValue('--ui-muted').trim() || '#8995b0',
-      bg: s.getPropertyValue('--ui-surface').trim() || '#0d1220'
-    };
-  })();
+    // Audit B: PALETTE via window.LGMDM.themeColors() (01-state.js) — caché + auto-refresh al cambiar tema.
+  const PALETTE = (window.LGMDM && typeof window.LGMDM.themeColors === 'function')
+    ? window.LGMDM.themeColors()
+    : {
+        good: '#45f6b2',
+        warn: '#ffbd4a',
+        danger: '#ff4264',
+        accent: '#23e7ff',
+        text: '#f4f7ff',
+        muted: '#8995b0',
+        bg: '#0d1220',
+      };
+
 
   const COLOR_GOOD = (PALETTE && PALETTE.good) || '#35f2a3';
   const COLOR_WARN = (PALETTE && PALETTE.warn) || '#ffd84d';

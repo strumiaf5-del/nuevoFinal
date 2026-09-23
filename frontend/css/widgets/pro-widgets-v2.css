@@ -188,7 +188,9 @@
   flex-direction: column;
   gap: var(--space-3);
 }
-.reverb-widget__head {
+/* Audit G: 3 widgets (reverb, dr-meter, lw) repetían `__head` block
+   idéntico — consolidado con selector comma. */
+.reverb-widget__head, .dr-meter-widget__head, .lw-widget__head {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -265,13 +267,6 @@
   flex-direction: column;
   gap: var(--space-3);
 }
-.dr-meter-widget__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
 .dr-meter-widget__head-meta { font-size: 0.62rem; color: var(--ui-muted); }
 .dr-meter-widget__main {
   display: flex;
@@ -325,13 +320,14 @@
   min-width: 180px;
   flex: 0 0 auto;
 }
-.dr-meter-widget__sub-card {
+/* Audit G: dr-meter y lw repiten `__sub-card` block idéntico. */
+.dr-meter-widget__sub-card, .lw-widget__sub-card {
   padding: var(--space-2);
   border-radius: var(--radius);
   background: var(--ui-panel);
   border: 1px solid var(--ui-border);
 }
-.dr-meter-widget__sub-card > span {
+.dr-meter-widget__sub-card > span, .lw-widget__sub-card > span {
   font-size: 0.6rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -445,13 +441,6 @@
   flex-direction: column;
   gap: var(--space-3);
 }
-.lw-widget__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-}
 .lw-widget__head-meta { font-size: 0.62rem; color: var(--ui-muted); }
 .lw-widget__main {
   display: flex;
@@ -483,16 +472,4 @@
   gap: var(--space-2);
   min-width: 200px;
   flex: 0 0 auto;
-}
-.lw-widget__sub-card {
-  padding: var(--space-2);
-  border-radius: var(--radius);
-  background: var(--ui-panel);
-  border: 1px solid var(--ui-border);
-}
-.lw-widget__sub-card > span {
-  font-size: 0.6rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--ui-muted);
 }

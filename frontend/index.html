@@ -1880,18 +1880,25 @@
 <script defer src="js/32-chain-family-tabs.js" integrity="sha384-5oo4PTL0EEmXDzEXLRWxL5YcpPNdfFpJEHgQoBEt5qnt0DJmk60Cpf2E4c5d31P3" crossorigin="anonymous"></script>
 <script defer src="js/32-flex-layout.js" integrity="sha384-ftlXeJNrT/msAGZRO4bVoeufH5B1i33lfkHxrfeNaPafX7YCqMTmhza62V8irq6u" crossorigin="anonymous"></script>
 <script defer src="js/35-audio-tap.js" integrity="sha384-9QShNo7Zu7FLQvsXaGF37uezxsH9LGtOGQcOBp10vW1x5ow3VBU5aNKfpsCMxvgW" crossorigin="anonymous"></script>
-<script defer src="js/40-tab-compliance.js" integrity="sha384-hW2iFGtjOQzQJQHzuh5magtqh60f1t9FEEwbFNB/30+0kt4121TZMeTcej+TjcVv" crossorigin="anonymous"></script>
+<!-- Audit E: 34-premium-suite.js y sus helpers pro-features/* cargan ANTES de los stubs 40-43.
+     Los stubs llaman global._lgmdmRenderXTab al render time (no al setup), así que cargar
+     34-premium-suite antes es suficiente para que las funciones estén disponibles cuando
+     el dispatch llama renderXTab. -->
+<!-- 00-state-helpers.js (Audit C+D): state getters + freq coord helpers centralizados. -->
+<script defer src="js/00-state-helpers.js" integrity="sha384-jN6PXw/SFjvjo+IBSh0UqerL13lcdSXG2qZadlytR38WtzvMZAfIecvcB3h/Zkk2" crossorigin="anonymous"></script>
+<!-- pro-features/wav-encoder.js: consume window.LGMDM.codec.* para codificación WAV. -->
+<script defer src="js/pro-features/wav-encoder.js" integrity="sha384-bF8Yrhv0+rlrrDbVxbHeLY+tz1M2N86hleGMqBfHF0G9wZo2l7Pmyuua6DVyzmSy" crossorigin="anonymous"></script>
+<!-- pro-features/premium-utils.js: consume window.LGMDM.premiumUtils.* para pearsonCorrelation + demask. -->
+<script defer src="js/pro-features/premium-utils.js" integrity="sha384-YqEGNM0JuBMjxIA16TagRg1Epa9zpQERszYWBg0eIAl/gMo5Ig/TFNM9nEWG5hc4" crossorigin="anonymous"></script>
+<!-- pro-features/visualizer-render.js: consume window.LGMDM.visualizerRender.* para goniometro + waterfall. -->
+<script defer src="js/pro-features/visualizer-render.js" integrity="sha384-HTLxbBNLcDdeELURfspS5r4zn2T3DKw5JgtTSK89phRrMFQP+VS37ujyu3Glt7K/" crossorigin="anonymous"></script>
+<!-- 34-premium-suite.js: setea global._lgmdmRenderXTab globals usados por 40-43-tab-*.js -->
+<script defer src="js/34-premium-suite.js" integrity="sha384-6FRf9bn7bMfRYw+DBtNLiJAkEYTgjbjTlMmxNrGkZAF2ciYiEbsxrxlRI/xzW53u" crossorigin="anonymous"></script>
+<!-- Stubs 40-43 (Audit E): llaman a global._lgmdmRenderXTab seteado por 34-premium-suite arriba -->
+<script defer src="js/40-tab-compliance.js" integrity="sha384-hW2iFGtjOQzEJQHzuh5magtqh60f1t9FEEwbFNB/30+0kt4121TZMeTcej+TjcVv" crossorigin="anonymous"></script>
 <script defer src="js/41-tab-abx.js" integrity="sha384-006SbNZ6TJPXbVef9RPa/a0IQNikBQLpciO9AInxTcBipt3u/korTBg7oL5iy777" crossorigin="anonymous"></script>
 <script defer src="js/42-tab-codec.js" integrity="sha384-89/EISZfsRhEX7wL+5LFs9YU3PFOLfui4Avd/QdcojhSRHZ1IiqOBIsgUfNeq+d+" crossorigin="anonymous"></script>
 <script defer src="js/43-tab-waterfall.js" integrity="sha384-Jag28bgxTDdPK87/OusuJPX86BqeWbnFitTVlurzpHZ7jyeNPmLUm++TblqvpCnV" crossorigin="anonymous"></script>
-<!-- 34-premium-suite.js cargado al final (registra PRO_FEATURES en LGMDM.proFeatures después de los widgets premium individuales) -->
-<!-- pro-features/wav-encoder.js cargado ANTES de 34-premium-suite (consume window.LGMDM.codec.* para codificación WAV). -->
-<script defer src="js/pro-features/wav-encoder.js" integrity="sha384-bF8Yrhv0+rlrrDbVxbHeLY+tz1M2N86hleGMqBfHF0G9wZo2l7Pmyuua6DVyzmSy" crossorigin="anonymous"></script>
-<!-- pro-features/premium-utils.js cargado ANTES de 34-premium-suite (consume window.LGMDM.premiumUtils.* para pearsonCorrelation + demask settings). -->
-<script defer src="js/pro-features/premium-utils.js" integrity="sha384-YqEGNM0JuBMjxIA16TagRg1Epa9zpQERszYWBg0eIAl/gMo5Ig/TFNM9nEWG5hc4" crossorigin="anonymous"></script>
-<!-- pro-features/visualizer-render.js cargado ANTES de 34-premium-suite (goniometro + waterfall drawing helpers via window.LGMDM.visualizerRender.*). -->
-<script defer src="js/pro-features/visualizer-render.js" integrity="sha384-HTLxbBNLcDdeELURfspS5r4zn2T3DKw5JgtTSK89phRrMFQP+VS37ujyu3Glt7K/" crossorigin="anonymous"></script>
-<script defer src="js/34-premium-suite.js" integrity="sha384-vqNbdE1vHLQnGVVWlHPs+AQaVMG6zkthQU2GUNn15niKsBiE4HxhWZn9nz8RJHwR" crossorigin="anonymous"></script>
 <script defer src="js/insert-base.js" integrity="sha384-GkDTdTseDL5bXXxvSs1d39r3BLI/gylB+ZVEfRLNngyr865rU8EYxKBVEw0C/kfZ" crossorigin="anonymous"></script>
 <script defer src="js/pro-insert-rack.js" integrity="sha384-vlxQt0kHw3VVkog3GWJgDDU1SRe3Ub9zvJXAcxwnQgOXVqNeNerAZoFfTryZuJ5y" crossorigin="anonymous"></script>
 <script defer src="js/reference-library-picker.js" integrity="sha384-jqtp0qCtEb0p4R4GzDSW67lmbktdCumT109Ve8gYX/5AU5pz5B1yn9b4MHlcWGOp" crossorigin="anonymous"></script>

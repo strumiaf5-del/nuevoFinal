@@ -92,7 +92,7 @@
   let requestSeq = 0;
   let requestedFile = null;
   let lastData = null;
-  const getSelectedFile = () => LG.state?.getSelectedFile?.() ?? null;
+  const getSelectedFile = () => window.LGMDM?.stateHelpers?.getSelectedFile?.() ?? null;
 
   async function requestAnalysis(options = {}) {
     const file = getSelectedFile();

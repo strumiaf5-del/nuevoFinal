@@ -9,19 +9,19 @@
   const NS = (global.LGMDM = global.LGMDM || {});
   NS.proFeatures = NS.proFeatures || {};
 
-  const PALETTE = (() => {
-    if (typeof document === 'undefined') return null;
-    const s = getComputedStyle(document.documentElement);
-    return {
-      good: s.getPropertyValue('--ui-good').trim() || '#45f6b2',
-      warn: s.getPropertyValue('--ui-warn').trim() || '#ffbd4a',
-      danger: s.getPropertyValue('--ui-danger').trim() || '#ff4264',
-      accent: s.getPropertyValue('--ui-accent').trim() || '#23e7ff',
-      text: s.getPropertyValue('--ui-text').trim() || '#f4f7ff',
-      muted: s.getPropertyValue('--ui-muted').trim() || '#8995b0',
-      bg: s.getPropertyValue('--ui-surface').trim() || '#0d1220'
-    };
-  })();
+    // Audit B: PALETTE via window.LGMDM.themeColors() (01-state.js) — caché + auto-refresh al cambiar tema.
+  const PALETTE = (window.LGMDM && typeof window.LGMDM.themeColors === 'function')
+    ? window.LGMDM.themeColors()
+    : {
+        good: '#45f6b2',
+        warn: '#ffbd4a',
+        danger: '#ff4264',
+        accent: '#23e7ff',
+        text: '#f4f7ff',
+        muted: '#8995b0',
+        bg: '#0d1220',
+      };
+
 
   const COLOR_BG = (PALETTE && PALETTE.bg) || '#0d1020';
   const COLOR_GRID = 'rgba(147,164,255,0.10)';
@@ -40,8 +40,9 @@
 
   const LOG_FMIN = logFreq(FMIN);
   const LOG_FMAX = logFreq(FMAX);
-  function _xFreq(f, left, width) { return window.xFromFreq(f, left, width, LOG_FMIN, LOG_FMAX); }
-  function _yDb(db, top, height) { return window.yFromDb(db, top, height, DMIN, DMAX); }
+
+  // Audit D: alias del namespace de helpers (00-state-helpers.js)
+  const freqHelpers = window.LGMDM?.freqHelpers;
 
   class Widget extends globalThis.BaseCanvasWidget {
     constructor() {
@@ -187,8 +188,8 @@
         for (let i = 0; i < sorted.length; i++) {
           const f = Math.max(FMIN, Math.min(FMAX, sorted[i].freq));
           const db = Math.max(DMIN, Math.min(DMAX, sorted[i].db));
-          const x = _xFreq(f, r.left, r.width);
-          const y = _yDb(db, r.top, r.height);
+          const x = freqHelpers.freqToX(f, r.left, r.width);
+          const y = freqHelpers.dbToY(db, r.top, r.height);
           if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.stroke();
@@ -205,9 +206,9 @@
         for (let n = 2; n <= 4; n++) {
           const f = baseF * n;
           if (f < FMIN || f > FMAX) continue;
-          const x = _xFreq(f, r.left, r.width);
+          const x = freqHelpers.freqToX(f, r.left, r.width);
           const gain = harmonics[n - 2] || 0;
-          const yT = _yDb(-10 + gain * 4, r.top, r.height);
+          const yT = freqHelpers.dbToY(-10 + gain * 4, r.top, r.height);
           ctx.strokeStyle = COLOR_HARM;
           ctx.lineWidth = 1;
           ctx.setLineDash([4, 4]);
@@ -246,7 +247,7 @@
 
       const yTicks = [-60, -48, -36, -24, -12, 0];
       yTicks.forEach((db) => {
-        const y = _yDb(db, r.top, r.height);
+        const y = freqHelpers.dbToY(db, r.top, r.height);
         ctx.strokeStyle = db === 0 ? COLOR_AXIS : COLOR_GRID;
         ctx.lineWidth = 1;
         ctx.beginPath();
@@ -261,7 +262,7 @@
       ctx.textBaseline = 'top';
       ctx.textAlign = 'center';
       xTicks.forEach((f) => {
-        const x = _xFreq(f, r.left, r.width);
+        const x = freqHelpers.freqToX(f, r.left, r.width);
         ctx.beginPath();
         ctx.moveTo(x, r.top);
         ctx.lineTo(x, r.bottom);

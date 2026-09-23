@@ -8,19 +8,19 @@
   const NS = (global.LGMDM = global.LGMDM || {});
   NS.proFeatures = NS.proFeatures || {};
 
-  const PALETTE = (() => {
-    if (typeof document === 'undefined') return null;
-    const s = getComputedStyle(document.documentElement);
-    return {
-      good: s.getPropertyValue('--ui-good').trim() || '#45f6b2',
-      warn: s.getPropertyValue('--ui-warn').trim() || '#ffbd4a',
-      danger: s.getPropertyValue('--ui-danger').trim() || '#ff4264',
-      accent: s.getPropertyValue('--ui-accent').trim() || '#23e7ff',
-      text: s.getPropertyValue('--ui-text').trim() || '#f4f7ff',
-      muted: s.getPropertyValue('--ui-muted').trim() || '#8995b0',
-      bg: s.getPropertyValue('--ui-surface').trim() || '#0d1220'
-    };
-  })();
+    // Audit B: PALETTE via window.LGMDM.themeColors() (01-state.js) — caché + auto-refresh al cambiar tema.
+  const PALETTE = (window.LGMDM && typeof window.LGMDM.themeColors === 'function')
+    ? window.LGMDM.themeColors()
+    : {
+        good: '#45f6b2',
+        warn: '#ffbd4a',
+        danger: '#ff4264',
+        accent: '#23e7ff',
+        text: '#f4f7ff',
+        muted: '#8995b0',
+        bg: '#0d1220',
+      };
+
 
   const COLOR_BG = (PALETTE && PALETTE.bg) || '#0d1020';
   const COLOR_GRID = 'rgba(147,164,255,0.10)';
@@ -38,9 +38,9 @@
   const LOG_FMIN = logFreq(FMIN);
   const LOG_FMAX = logFreq(FMAX);
 
-  function _xFreq(f, left, width) { return window.xFromFreq(f, left, width, LOG_FMIN, LOG_FMAX); }
-  function _yDb(db, top, height) { return window.yFromDb(db, top, height, DMIN, DMAX); }
-  function _freqFromX(x, left, width) { return window.freqFromX(x, left, width, LOG_FMIN, LOG_FMAX); }
+
+  // Audit D: aliases locales del namespace freqHelpers (00-state-helpers.js)
+  const freqHelpers = window.LGMDM?.freqHelpers;
 
   class Widget {
     constructor() {
@@ -161,7 +161,7 @@
         this._hover = null;
         return;
       }
-      this._hover = { x, y, freq: _freqFromX(x, r.left, r.width) };
+      this._hover = { x, y, freq: freqHelpers.xToFreq(x, r.left, r.width) };
     }
 
     _onClick(e) {
@@ -169,12 +169,12 @@
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
       const r = this._plotRect();
-      const px = _xFreq(this.data.pivot_hz, r.left, r.width);
-      const py = _yDb(0, r.top, r.height);
+      const px = freqHelpers.freqToX(this.data.pivot_hz, r.left, r.width);
+      const py = freqHelpers.dbToY(0, r.top, r.height);
       if (Math.hypot(x - px, y - py) < 18) {
         // Clic sobre el pivot: no reposicionar (área de arrastre reservada)
       } else if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
-        const newPivot = _freqFromX(x, r.left, r.width);
+        const newPivot = freqHelpers.xToFreq(x, r.left, r.width);
         this.data.pivot_hz = Math.max(FMIN, Math.min(FMAX, newPivot));
         if (this.options.onPivotChange) this.options.onPivotChange(this.data.pivot_hz);
       }
@@ -244,8 +244,8 @@
         const f = Math.pow(10, LOG_FMIN + t * (LOG_FMAX - LOG_FMIN));
         const logRatio = Math.log2(f / pivotF);
         const db = Math.max(-12, Math.min(12, -logRatio * shelf));
-        const x = _xFreq(f, r.left, r.width);
-        const y = _yDb(db, r.top, r.height);
+        const x = freqHelpers.freqToX(f, r.left, r.width);
+        const y = freqHelpers.dbToY(db, r.top, r.height);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.stroke();
@@ -262,16 +262,16 @@
         for (let i = 0; i < sorted.length; i++) {
           const f = Math.max(FMIN, Math.min(FMAX, sorted[i].freq));
           const db = Math.max(DMIN, Math.min(DMAX, sorted[i].db));
-          const x = _xFreq(f, r.left, r.width);
-          const y = _yDb(db, r.top, r.height);
+          const x = freqHelpers.freqToX(f, r.left, r.width);
+          const y = freqHelpers.dbToY(db, r.top, r.height);
           if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
         }
         ctx.stroke();
         ctx.shadowBlur = 0;
       }
 
-      const px = _xFreq(pivotF, r.left, r.width);
-      const py = _yDb(0, r.top, r.height);
+      const px = freqHelpers.freqToX(pivotF, r.left, r.width);
+      const py = freqHelpers.dbToY(0, r.top, r.height);
       ctx.fillStyle = COLOR_PIVOT;
       ctx.shadowColor = COLOR_PIVOT;
       ctx.shadowBlur = 14;
@@ -313,7 +313,7 @@
 
       const yTicks = [-12, -6, 0, 6, 12];
       yTicks.forEach((db) => {
-        const y = _yDb(db, r.top, r.height);
+        const y = freqHelpers.dbToY(db, r.top, r.height);
         ctx.beginPath();
         ctx.moveTo(r.left, y);
         ctx.lineTo(r.right, y);
@@ -327,7 +327,7 @@
       ctx.textBaseline = 'top';
       ctx.textAlign = 'center';
       xTicks.forEach((f) => {
-        const x = _xFreq(f, r.left, r.width);
+        const x = freqHelpers.freqToX(f, r.left, r.width);
         ctx.beginPath();
         ctx.moveTo(x, r.top);
         ctx.lineTo(x, r.bottom);
