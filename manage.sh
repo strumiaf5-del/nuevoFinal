@@ -1,9 +1,14 @@
 #!/usr/bin/env bash
 # ════════════════════════════════════════════════════════════
 # manage.sh — Service manager interactivo para LGMDM
-# USO:  sudo manage <service> <action> [opts]
-#       sudo manage status              (resumen de todo)
-#       sudo manage --help              (esta ayuda)
+# USO INTERACTIVO (REPL):
+#   sudo manage                          # entra al REPL con prompt 'manage>'
+#   sudo manage --interactive             # alias -i (forza interactivo)
+#
+# USO DIRECTO (subcommand):
+#   sudo manage <service> <action> [opts]
+#   sudo manage status                   (resumen de todo)
+#   sudo manage --help                   (esta ayuda)
 #
 # El script vive en /root/nuevoFinal/manage.sh pero hay un symlink
 # en /usr/local/bin/manage — funciona globalmente sin path.
@@ -22,13 +27,8 @@
 #   logs [N]   tail -F de las últimas N líneas (default 50, N=0 = follow)
 #   sync       (solo frontend) rsync src → /var/www/masteringstudio/
 #
-# Ejemplos:
-#   sudo manage status
-#   sudo manage backend start
-#   sudo manage caddy restart -y
-#   sudo manage frontend sync --delete
-#   sudo manage backend logs 100
-#   sudo manage duckdns status
+# En modo REPL también hay comandos globales:
+#   help, quit, exit, q, clear, status
 # ════════════════════════════════════════════════════════════
 
 set -uo pipefail
@@ -61,17 +61,26 @@ C_BLUE="\033[1;34m"; C_BOLD="\033[1m"; C_RESET="\033[0m"
 
 usage() {
   cat <<'EOF'
-Usage: sudo manage <service> <action> [opts]
-       sudo manage status
-       sudo manage --help
+Usage (directo):
+  sudo manage <service> <action> [opts]
+  sudo manage status
+  sudo manage --help
+
+Usage (interactivo — REPL):
+  sudo manage                          # prompt 'manage> ', escribís comandos
+  sudo manage -i | --interactive        # alias para forzar modo interactivo
 
 Services: backend | caddy | frontend | duckdns
 Actions:  start | stop | restart | status | logs [N] | sync (frontend only)
 
-Opciones:
+Opciones globales:
   -y, --yes     No pedir confirmación en stop/restart
   -h, --help    Mostrar esta ayuda
-  -f, --follow  Para logs: seguir agregando líneas (equivalente a N=0)
+  -f, --follow  Para logs: seguir agregando líneas (N=0)
+  -i, --interactive  Forzar modo REPL
+
+En REPL también funcionan comandos globales:
+  help | quit | exit | q | clear | status
 
 Ejemplos:
   sudo manage status
@@ -80,6 +89,14 @@ Ejemplos:
   sudo manage frontend sync --delete
   sudo manage backend logs 100
   sudo manage duckdns status
+
+Modo interactivo (REPL):
+  $ sudo manage
+  manage — modo interactivo. Escribí help para ver comandos, quit para salir.
+  manage> backend start
+  manage> caddy logs 50
+  manage> status
+  manage> quit
 
 Nota: 'manage' es symlink en /usr/local/bin/ que apunta a
 /root/nuevoFinal/manage.sh. Otros scripts disponibles globalmente:
@@ -401,8 +418,45 @@ dispatch() {
 ASSUME_YES=false
 FOLLOW=0
 
+# ── Modo interactivo (REPL) ───────────────────────────────────────────────────
+# Cuando se invoca sin argumentos (o con -i/--interactive), entra en un
+# loop que prompt 'manage> ' y dispatcha cada línea como si fuera argv.
+
+interactive_mode() {
+  echo -e "${C_BOLD}manage${C_RESET} — modo interactivo. Escribí ${C_BOLD}help${C_RESET} para ver comandos, ${C_BOLD}quit${C_RESET} para salir."
+  echo ""
+  local line cmd
+  while :; do
+    # Si stdin no es TTY (pipe/cron), salimos. La idea es que el modo
+    # interactivo requiere terminal humano.
+    if [ ! -t 0 ]; then
+      warn "stdin no es TTY — saliendo del modo interactivo. Usá 'manage <svc> <action>' directamente."
+      return 0
+    fi
+    read -r -e -p "$(echo -ne "${C_BLUE}manage>${C_RESET} ")" line || break
+    # Trim
+    line="$(echo "$line" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')"
+    [ -z "$line" ] && continue
+
+    # Comandos globales del REPL
+    case "$line" in
+      quit|exit|q|:q) echo "Chau."; return 0 ;;
+      help|-h|--help) usage ;;
+      clear|cls) printf '\033[2J\033[H' ;;
+      status|all) service_status ;;
+      *) # Despachar como subcommand
+         # Shell parse: split por whitespace
+         cmd=( $line )
+         dispatch "${cmd[0]}" "${cmd[1]}" "${cmd[@]:2}"
+         ;;
+    esac
+    echo ""
+  done
+  return 0
+}
+
 # Parse args
-if [ $# -eq 0 ]; then usage; exit 0; fi
+if [ $# -eq 0 ]; then interactive_mode; exit 0; fi
 
 ARGS=()
 while [ $# -gt 0 ]; do
@@ -410,6 +464,7 @@ while [ $# -gt 0 ]; do
     -h|--help) usage; exit 0 ;;
     -y|--yes)  ASSUME_YES=true; shift ;;
     -f|--follow) FOLLOW=1; shift ;;
+    -i|--interactive) interactive_mode; exit 0 ;;
     status)
       # Solo tratar como "overview" si es el ÚNICO argumento.
       # Si hay más args (ej: 'backend status'), va al dispatch normal.
