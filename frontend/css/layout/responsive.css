@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════════════════════
-   RESPONSIVE DESIGN - Mobile First Approach
+   RESPONSIVE DESIGN - Desktop-first (max-width breakpoints)
 
    Tablet 959px breakpoint is SPLIT between this file (content half:
    grids, buttons, inputs) and layout-shell.css (shell half: sidebar,
@@ -7,7 +7,7 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ─────────────────────────────────────────────────────────────────────────
-   LGMDM Responsive Breakpoints (canonical, mobile-first)
+   LGMDM Responsive Breakpoints (canonical, desktop-first)
    ─────────────────────────────────────────────────────────────────────────
    480 mobile baseline (smallest phones, icon-only mode)
    599 mobile upper boundary

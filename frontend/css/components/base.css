@@ -32,7 +32,7 @@ MISC
 
   label:has(> input[type="checkbox"]:checked) {
     border-color: var(--ui-warn);
-    background: var(--ui-warn-glow, color-mix(in srgb, var(--ui-warm) 10%, transparent));
+    background: var(--ui-warn-glow);
     color: var(--ui-text);
   }
 /* Base desktop styling for .app-footer */
@@ -59,9 +59,9 @@ display: flex;
 align-items: center;
 justify-content: center;
 z-index: var(--z-compat);
-background: linear-gradient(135deg, var(--ui-bg, #0a0e27) 0%, #1a1d3a 100%);
-color: var(--ui-text, #f7f8ff);
-font-family: var(--ui-font-display, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif);
+background: linear-gradient(135deg, var(--ui-bg) 0%, #1a1d3a 100%);
+color: var(--ui-text);
+font-family: var(--ui-font-display);
 overflow: auto;
 padding: var(--space-8);
 animation: compat-wall-fade-in 0.4s ease-out;
@@ -76,9 +76,9 @@ to { opacity: 1; }
 max-width: 480px;
 width: 100%;
 padding: 2.5rem;
-background: var(--ui-surface, rgba(15, 18, 35, 0.95));
+background: var(--ui-surface);
 border-radius: var(--radius);
-border: 1px solid var(--ui-border-strong, rgba(35, 231, 255, 0.3));
+border: 1px solid var(--ui-border-strong);
 box-shadow: 0 0 40px rgba(35, 231, 255, 0.15),
           0 10px 30px rgba(0, 0, 0, 0.5);
 backdrop-filter: blur(8px);
@@ -87,7 +87,7 @@ backdrop-filter: blur(8px);
 .compat-wall__content h1 {
 font-size: var(--text-xl);
 margin: 0 0 var(--space-4);
-color: var(--ui-danger, #ff6b6b);
+color: var(--ui-danger);
 font-weight: 600;
 letter-spacing: -0.02em;
 }
@@ -109,8 +109,8 @@ align-items: center;
 justify-content: space-between;
 padding: var(--space-3) var(--space-4);
 margin: var(--space-2) 0;
-background: var(--ui-accent-ghost, rgba(35, 231, 255, 0.08));
-border-left: 3px solid var(--ui-accent, #23e7ff);
+background: var(--ui-accent-ghost);
+border-left: 3px solid var(--ui-accent);
 border-radius: var(--radius-xs);
 }
 
@@ -119,19 +119,19 @@ font-weight: 500;
 }
 
 .compat-wall__content a {
-color: var(--ui-accent, #23e7ff);
+color: var(--ui-accent);
 text-decoration: none;
 font-weight: 600;
 font-size: 0.875rem;
 padding: var(--space-1) 0.75rem;
-border: 1px solid var(--ui-accent, #23e7ff);
+border: 1px solid var(--ui-accent);
 border-radius: var(--radius-xs);
 transition: background 0.2s ease, color 0.2s ease;
 }
 
 .compat-wall__content a:hover {
-background: var(--ui-accent, #23e7ff);
-color: var(--ui-bg, #0a0e27);
+background: var(--ui-accent);
+color: var(--ui-bg);
 }
 
 .compat-wall__small {

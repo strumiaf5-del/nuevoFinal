@@ -180,19 +180,8 @@
     .skeleton-line { animation: none; }
   }
 
-  .empty-state {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 0.75rem;
-    padding: var(--space-8) var(--space-4);
-    text-align: center;
-    color: var(--ui-muted);
-    border: 1px dashed var(--ui-border);
-    border-radius: var(--radius);
-    background: var(--ui-panel);
-  }
+  /* ── Empty state (definición consolidada más abajo; los icon/h3/p de acá
+     siguen aplicando como utility suelta si alguien usa la estructura). */
   .empty-state-icon {
     font-size: 2.4rem;
     opacity: 0.75;
@@ -201,10 +190,6 @@
     margin: 0;
     font-size: var(--space-4);
     color: var(--ui-text);
-  }
-  .empty-state p {
-    margin: 0;
-    font-size: var(--space-4);
   }
   .empty-state .btn { margin-top: var(--space-2); }
 

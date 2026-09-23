@@ -13,24 +13,24 @@
 
   function createPitchCorrectionOverlay() {
     return `
-      <div id="${OVERLAY_ID}" class="lgmdm-modal-overlay" style="display:none; position:fixed; inset:0; z-index:var(--z-modal, 12000); background:rgba(8,11,20,0.85); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:1rem; box-sizing:border-box;">
-        <div id="${PC_PANEL_ID}" class="admin-box" style="width:min(520px, 94vw); max-height:88vh; overflow-y:auto; background:linear-gradient(145deg, #111625, #191c32); border:1px solid rgba(125,232,255,0.25); border-radius:18px; padding:1.5rem; box-shadow:0 24px 60px rgba(0,0,0,0.6); box-sizing:border-box; color:var(--ui-text);">
+      <div id="${OVERLAY_ID}" class="lgmdm-modal-overlay" style="display:none; position:fixed; inset:0; z-index:var(--z-modal, 12000); background:color-mix(in srgb, var(--ui-bg) 85%, transparent); backdrop-filter:blur(10px); align-items:center; justify-content:center; padding:1rem; box-sizing:border-box;">
+        <div id="${PC_PANEL_ID}" class="admin-box" style="width:min(520px, 94vw); max-height:88vh; overflow-y:auto; background:linear-gradient(145deg, var(--ui-surface), var(--ui-surface-2)); border:1px solid color-mix(in srgb, var(--ui-accent) 25%, transparent); border-radius:18px; padding:1.5rem; box-shadow:0 24px 60px color-mix(in srgb, #000000 60%, transparent); box-sizing:border-box; color:var(--ui-text);">
           
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; padding-bottom:0.75rem; border-bottom:1px solid rgba(255,255,255,0.08);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; padding-bottom:0.75rem; border-bottom:1px solid color-mix(in srgb, #ffffff 8%, transparent);">
             <div style="display:flex; align-items:center; gap:0.5rem;">
               <span style="font-size:1.2rem;">🎵</span>
               <h3 style="margin:0; font-size:1.1rem; font-weight:700; color:var(--ui-text);">Pitch Correction</h3>
             </div>
-            <button id="pitchCorrectionClose" type="button" aria-label="Cerrar modal" style="width:30px; height:30px; border-radius:8px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.05); color:var(--ui-muted); cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.18s;">✕</button>
+            <button id="pitchCorrectionClose" type="button" aria-label="Cerrar modal" style="width:30px; height:30px; border-radius:8px; border:1px solid color-mix(in srgb, #ffffff 12%, transparent); background:color-mix(in srgb, #ffffff 5%, transparent); color:var(--ui-muted); cursor:pointer; font-size:1rem; display:flex; align-items:center; justify-content:center; transition:all 0.18s;">✕</button>
           </div>
 
           <!-- Input File / Library -->
           <div style="margin-bottom:1rem;">
             <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Audio Input</label>
             <div id="pitchCorrectionCurrentFileNotice" style="font-size:0.8rem; color:var(--ui-accent); margin-bottom:0.4rem;">Pista actual en consola</div>
-            <input type="file" id="pitchCorrectionFile" accept="audio/*" style="display:block; width:100%; box-sizing:border-box; font-size:0.8rem; padding:0.4rem; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text);">
+            <input type="file" id="pitchCorrectionFile" accept="audio/*" style="display:block; width:100%; box-sizing:border-box; font-size:0.8rem; padding:0.4rem; background:color-mix(in srgb, #ffffff 3%, transparent); border:1px solid color-mix(in srgb, #ffffff 10%, transparent); border-radius:8px; color:var(--ui-text);">
             <div style="font-size:0.72rem; color:var(--ui-muted); margin:0.4rem 0 0.25rem;">O seleccionar de biblioteca de stems:</div>
-            <select id="pitchCorrectionLibrary" style="width:100%; box-sizing:border-box; padding:0.5rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text); font-size:0.82rem;">
+            <select id="pitchCorrectionLibrary" style="width:100%; box-sizing:border-box; padding:0.5rem; background:color-mix(in srgb, #ffffff 4%, transparent); border:1px solid color-mix(in srgb, #ffffff 10%, transparent); border-radius:8px; color:var(--ui-text); font-size:0.82rem;">
               <option value="">— No seleccionada —</option>
             </select>
           </div>
@@ -40,7 +40,7 @@
             <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Intensidad de Corrección (Mode)</label>
             <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:0.4rem;" id="pitchModeGroup">
               ${PC_MODES.map(m => `
-                <button type="button" class="pc-mode-btn" data-mode="${m}" ${m === 'MEDIUM' ? 'data-selected="true"' : ''} style="padding:0.5rem; background:${m === 'MEDIUM' ? 'rgba(92,232,255,0.15)' : 'rgba(255,255,255,0.04)'}; border:2px solid ${m === 'MEDIUM' ? 'var(--ui-accent)' : 'rgba(255,255,255,0.1)'}; border-radius:8px; color:${m === 'MEDIUM' ? '#fff' : 'var(--ui-muted)'}; cursor:pointer; font-weight:700; font-size:0.78rem; transition:all 0.18s;">
+                <button type="button" class="pc-mode-btn" data-mode="${m}" ${m === 'MEDIUM' ? 'data-selected="true"' : ''} style="padding:0.5rem; background:${m === 'MEDIUM' ? 'color-mix(in srgb, var(--ui-accent) 15%, transparent)' : 'color-mix(in srgb, #ffffff 4%, transparent)'}; border:2px solid ${m === 'MEDIUM' ? 'var(--ui-accent)' : 'color-mix(in srgb, #ffffff 10%, transparent)'}; border-radius:8px; color:${m === 'MEDIUM' ? 'var(--ui-text)' : 'var(--ui-muted)'}; cursor:pointer; font-weight:700; font-size:0.78rem; transition:all 0.18s;">
                   ${m}
                 </button>
               `).join('')}
@@ -53,7 +53,7 @@
           <!-- Scale selector -->
           <div style="margin-bottom:1rem;">
             <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Escala / Tonalidad</label>
-            <select id="pitchCorrectionScale" style="width:100%; box-sizing:border-box; padding:0.5rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text); font-size:0.82rem;">
+            <select id="pitchCorrectionScale" style="width:100%; box-sizing:border-box; padding:0.5rem; background:color-mix(in srgb, #ffffff 4%, transparent); border:1px solid color-mix(in srgb, #ffffff 10%, transparent); border-radius:8px; color:var(--ui-text); font-size:0.82rem;">
               <option value="">— Auto-detect —</option>
               <option value="C_major">C Major</option>
               <option value="G_major">G Major</option>
@@ -83,7 +83,7 @@
           <!-- Format -->
           <div style="margin-bottom:1.2rem;">
             <label style="display:block; font-size:0.78rem; font-weight:700; color:var(--ui-muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:0.35rem;">Formato de Salida</label>
-            <select id="pitchCorrectionFormat" style="width:100%; box-sizing:border-box; padding:0.5rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--ui-text); font-size:0.82rem;">
+            <select id="pitchCorrectionFormat" style="width:100%; box-sizing:border-box; padding:0.5rem; background:color-mix(in srgb, #ffffff 4%, transparent); border:1px solid color-mix(in srgb, #ffffff 10%, transparent); border-radius:8px; color:var(--ui-text); font-size:0.82rem;">
               <option value="wav">WAV (24-bit PCM HQ)</option>
               <option value="flac">FLAC</option>
               <option value="mp3">MP3 (320kbps)</option>
@@ -99,8 +99,8 @@
           <div id="pitchCorrectionStatus" role="status" aria-live="polite" style="margin-top:0.8rem; font-size:0.82rem; text-align:center; min-height:1.2rem;"></div>
 
           <div id="pitchCorrectionProgress" style="display:none; margin-top:0.6rem;">
-            <div style="height:6px; background:rgba(255,255,255,0.08); border-radius:3px; overflow:hidden;">
-              <div id="pitchCorrectionProgressBar" style="width:100%; height:100%; background:linear-gradient(90deg, #42d9ff, #52f2bd); animation:pcPulse 1.2s infinite ease-in-out;"></div>
+            <div style="height:6px; background:color-mix(in srgb, #ffffff 8%, transparent); border-radius:3px; overflow:hidden;">
+              <div id="pitchCorrectionProgressBar" style="width:100%; height:100%; background:linear-gradient(90deg, var(--ui-accent), var(--ui-good)); animation:pcPulse 1.2s infinite ease-in-out;"></div>
             </div>
             <div style="font-size:0.72rem; color:var(--ui-muted); text-align:center; margin-top:0.3rem;">Procesando en servidor…</div>
           </div>
@@ -130,15 +130,15 @@
     modeBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
         modeBtns.forEach(b => {
-          b.style.borderColor = 'rgba(255,255,255,0.1)';
-          b.style.background = 'rgba(255,255,255,0.04)';
+          b.style.borderColor = 'color-mix(in srgb, #ffffff 10%, transparent)';
+          b.style.background = 'color-mix(in srgb, #ffffff 4%, transparent)';
           b.style.color = 'var(--ui-muted)';
           delete b.dataset.selected;
         });
         const target = e.currentTarget;
         target.style.borderColor = 'var(--ui-accent)';
-        target.style.background = 'rgba(92,232,255,0.15)';
-        target.style.color = '#fff';
+        target.style.background = 'color-mix(in srgb, var(--ui-accent) 15%, transparent)';
+        target.style.color = 'var(--ui-text)';
         target.dataset.selected = 'true';
       }, { signal: ac.signal });
     });
@@ -311,14 +311,14 @@
 
       if (statusEl) {
         statusEl.textContent = `✓ Completado: Tonalidad ${detectedKey} (confianza ${(confidence * 100).toFixed(0)}%)`;
-        statusEl.style.color = '#4ade80';
+        statusEl.style.color = 'var(--ui-good)';
       }
       LGMDM.ui?.showToast?.(`Pitch Correction completado (${detectedKey})`, 'success', 3500);
 
     } catch (err) {
       if (statusEl) {
         statusEl.textContent = `❌ Error: ${err.message || err}`;
-        statusEl.style.color = '#ff6b81';
+        statusEl.style.color = 'var(--ui-danger)';
       }
       console.debug('Pitch correction error:', err);
     } finally {

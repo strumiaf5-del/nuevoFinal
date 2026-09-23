@@ -6,7 +6,8 @@
 .pro-insert-rack {
   --pir-bg:        rgba(8, 10, 22, 0.92);
   --pir-bg-glass:  rgba(13, 18, 36, 0.75);
-  --pir-border:    rgba(125, 232, 255, 0.22);
+  --pir-border:    rgba(var(--pir-accent-rgb), 0.22);
+  --pir-accent-rgb: 125, 232, 255;
   --pir-text:      #eef3ff;
   --pir-muted:     #9ba6c4;
   --pir-accent:    #42e8ff;
@@ -56,7 +57,7 @@
   align-items: center;
   height: 36px;
   padding: 0 var(--space-3);
-  background: linear-gradient(180deg, rgba(125, 232, 255, 0.08), transparent);
+  background: linear-gradient(180deg, rgba(var(--pir-accent-rgb), 0.08), transparent);
   border-bottom: 1px solid var(--pir-border);
   user-select: none;
   cursor: grab;
@@ -86,18 +87,18 @@
   cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s;
 }
-.pir-btn:hover { background: rgba(125, 232, 255, 0.15); border-color: var(--pir-accent); }
+.pir-btn:hover { background: rgba(var(--pir-accent-rgb), 0.15); border-color: var(--pir-accent); }
 .pir-btn--icon { padding: var(--space-1) var(--space-2); min-width: 26px; font-weight: 700; }
 .pir-btn--mini { padding: 0.15rem var(--space-1); font-size: var(--space-3); background: color-mix(in srgb, #ffffff 4%, transparent); }
 .pir-btn--accent {
-  background: linear-gradient(135deg, rgba(125, 232, 255, 0.22), rgba(66, 232, 255, 0.18));
+  background: linear-gradient(135deg, rgba(var(--pir-accent-rgb), 0.22), rgba(66, 232, 255, 0.18));
   color: var(--pir-text);
-  border: 1px solid rgba(125, 232, 255, 0.45);
+  border: 1px solid rgba(var(--pir-accent-rgb), 0.45);
   font-weight: 600;
   padding: 0.3rem 0.7rem;
 }
 .pir-btn--accent:hover {
-  background: linear-gradient(135deg, rgba(125, 232, 255, 0.34), rgba(66, 232, 255, 0.28));
+  background: linear-gradient(135deg, rgba(var(--pir-accent-rgb), 0.34), rgba(66, 232, 255, 0.28));
   border-color: var(--pir-accent);
 }
 .pir-btn--accent:disabled {
@@ -120,8 +121,8 @@
 
 /* ── Insert card ── */
 .pir-card {
-  background: linear-gradient(180deg, rgba(125, 232, 255, 0.04), rgba(13, 18, 36, 0.6));
-  border: 1px solid rgba(125, 232, 255, 0.18);
+  background: linear-gradient(180deg, rgba(var(--pir-accent-rgb), 0.04), rgba(13, 18, 36, 0.6));
+  border: 1px solid rgba(var(--pir-accent-rgb), 0.18);
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
@@ -149,7 +150,7 @@
 }
 .pir-card.drag-over {
   border: 1px dashed var(--pir-accent);
-  background: rgba(125, 232, 255, 0.10);
+  background: rgba(var(--pir-accent-rgb), 0.10);
   transform: scale(1.03);
 }
 .pir-card.dragging { opacity: 0.35; }
@@ -251,7 +252,7 @@
 }
 .pro-insert-rack--floating .pir-titlebar {
   cursor: grab;
-  background: linear-gradient(180deg, rgba(125, 232, 255, 0.16), rgba(125, 232, 255, 0.04));
+  background: linear-gradient(180deg, rgba(var(--pir-accent-rgb), 0.16), rgba(var(--pir-accent-rgb), 0.04));
 }
 .pro-insert-rack--floating[data-hidden="true"] {
   display: none;
@@ -278,7 +279,7 @@
 }
 .pir-detail-dialog {
   background: linear-gradient(160deg, #111625, #1a1e36);
-  border: 1px solid rgba(125, 232, 255, 0.22);
+  border: 1px solid rgba(var(--pir-accent-rgb), 0.22);
   border-radius: 14px;
   width: min(720px, 96vw);
   max-height: 86vh;
@@ -292,7 +293,7 @@
   align-items: center;
   gap: var(--space-3, 0.6rem);
   padding: 0.85rem 1rem;
-  border-bottom: 1px solid rgba(125, 232, 255, 0.15);
+  border-bottom: 1px solid rgba(var(--pir-accent-rgb), 0.15);
 }
 .pir-detail-head strong {
   color: var(--ui-text, var(--ui-text));
@@ -302,7 +303,7 @@
   color: var(--ui-muted, var(--ui-muted));
   font-family: var(--mono, monospace);
   font-size: 0.75rem;
-  background: rgba(125, 232, 255, 0.08);
+  background: rgba(var(--pir-accent-rgb), 0.08);
   padding: 2px 6px;
   border-radius: 4px;
   flex: 1;
@@ -333,7 +334,7 @@
 }
 .pir-detail-canvas-wrap {
   background: rgba(7, 9, 18, 0.6);
-  border: 1px solid rgba(125, 232, 255, 0.12);
+  border: 1px solid rgba(var(--pir-accent-rgb), 0.12);
   border-radius: 10px;
   padding: 0.5rem;
 }

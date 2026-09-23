@@ -9,13 +9,18 @@
 }
 
 /* Pro Insert Rack docked (220px fixed bottom) — compensar padding del content
-   para que los últimos controles (download, report, transport) no queden tapados. */
-body:has(.pro-insert-rack--docked):not(:has(.pro-insert-rack--docked[data-minimized="true"])):not(:has(.pro-insert-rack--docked[data-hidden="true"])) .content-area {
-  padding-bottom: calc(var(--lg-content-pad-y) + var(--lg-pir-docked-h));
-}
-body:has(.pro-insert-rack--docked) .theme-toast,
-body:has(.pro-insert-rack--docked) .ai-panel {
-  bottom: calc(var(--lg-pir-docked-h) + 24px);
+   para que los últimos controles (download, report, transport) no queden tapados.
+   P2 CSS-I-5: :has() no soportado en Firefox <121 ni Safari <15.4. Gateamos
+   con @supports para que browsers sin :has() caigan al default (sin padding
+   extra, comportamiento histórico). */
+@supports selector(:has(*)) {
+  body:has(.pro-insert-rack--docked):not(:has(.pro-insert-rack--docked[data-minimized="true"])):not(:has(.pro-insert-rack--docked[data-hidden="true"])) .content-area {
+    padding-bottom: calc(var(--lg-content-pad-y) + var(--lg-pir-docked-h));
+  }
+  body:has(.pro-insert-rack--docked) .theme-toast,
+  body:has(.pro-insert-rack--docked) .ai-panel {
+    bottom: calc(var(--lg-pir-docked-h) + 24px);
+  }
 }
 
 html, body {
