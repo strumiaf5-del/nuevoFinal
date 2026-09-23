@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # ════════════════════════════════════════════════════════════
 # manage.sh — Service manager interactivo para LGMDM
-# USO:  sudo ./manage.sh <service> <action> [opts]
-#       sudo ./manage.sh status         (resumen de todo)
-#       sudo ./manage.sh --help         (esta ayuda)
+# USO:  sudo manage <service> <action> [opts]
+#       sudo manage status              (resumen de todo)
+#       sudo manage --help              (esta ayuda)
+#
+# El script vive en /root/nuevoFinal/manage.sh pero hay un symlink
+# en /usr/local/bin/manage — funciona globalmente sin path.
 #
 # Servicios:
 #   backend    FastAPI (uvicorn) en 127.0.0.1:8000
@@ -20,12 +23,12 @@
 #   sync       (solo frontend) rsync src → /var/www/masteringstudio/
 #
 # Ejemplos:
-#   sudo ./manage.sh status
-#   sudo ./manage.sh backend start
-#   sudo ./manage.sh caddy restart -y
-#   sudo ./manage.sh frontend sync --delete
-#   sudo ./manage.sh backend logs 100
-#   sudo ./manage.sh duckdns status
+#   sudo manage status
+#   sudo manage backend start
+#   sudo manage caddy restart -y
+#   sudo manage frontend sync --delete
+#   sudo manage backend logs 100
+#   sudo manage duckdns status
 # ════════════════════════════════════════════════════════════
 
 set -uo pipefail
@@ -58,9 +61,9 @@ C_BLUE="\033[1;34m"; C_BOLD="\033[1m"; C_RESET="\033[0m"
 
 usage() {
   cat <<'EOF'
-Usage: sudo ./manage.sh <service> <action> [opts]
-       sudo ./manage.sh status
-       sudo ./manage.sh --help
+Usage: sudo manage <service> <action> [opts]
+       sudo manage status
+       sudo manage --help
 
 Services: backend | caddy | frontend | duckdns
 Actions:  start | stop | restart | status | logs [N] | sync (frontend only)
@@ -71,12 +74,17 @@ Opciones:
   -f, --follow  Para logs: seguir agregando líneas (equivalente a N=0)
 
 Ejemplos:
-  sudo ./manage.sh status
-  sudo ./manage.sh backend start
-  sudo ./manage.sh caddy restart -y
-  sudo ./manage.sh frontend sync --delete
-  sudo ./manage.sh backend logs 100
-  sudo ./manage.sh duckdns status
+  sudo manage status
+  sudo manage backend start
+  sudo manage caddy restart -y
+  sudo manage frontend sync --delete
+  sudo manage backend logs 100
+  sudo manage duckdns status
+
+Nota: 'manage' es symlink en /usr/local/bin/ que apunta a
+/root/nuevoFinal/manage.sh. Otros scripts disponibles globalmente:
+  frontend-sync   /root/nuevoFinal/frontend-sync.sh
+  install-duckdns /root/nuevoFinal/install-duckdns.sh
 EOF
 }
 
