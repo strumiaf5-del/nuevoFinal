@@ -357,42 +357,41 @@ function stemEmoji(t) {
       const wsAuthFn = apiMod?.wsAuthHandle;
       if (typeof wsAuthFn !== 'function') throw new Error('LGMDM.api.wsAuthHandle no disponible');
       const wsHandle = await wsAuthFn('/ws/mix-stream');
-      await new Promise((resolve, reject) => {
-        let resolved = false;
-        const ws = new WebSocket(wsHandle.url, wsHandle.protocols);
-        serverPreview.ws = ws;
-        ws.binaryType = 'arraybuffer';
-        ws.onopen = () => {
-          ws.send(JSON.stringify({
-            session_id: mixerState.sessionId,
-            stem_names: names,
-            stem_library_ids: (typeof window.buildStemLibraryIdMap === 'function' ? window.buildStemLibraryIdMap(names) : {}),
-            stem_params: stemParams,
-            mix_params: mixParamsPayload,
-            chunk_seconds: 1.0,
-            preview_seconds: 12,
-            sr: 44100,
-          }));
-        };
-        ws.onmessage = (ev) => {
-          if (typeof ev.data === 'string') {
-            let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; }
-            if (msg.event === 'chunk') { sampleRate = msg.sample_rate; channels = msg.channels; }
-            if (msg.event === 'error') reject(new Error(msg.message || 'Error de preview'));
-            if (msg.event === 'done' && !resolved) { resolved = true; resolve(); }
-          } else {
-            pcmChunks.push(ev.data);
-          }
-        };
-        ws.onerror = () => reject(new Error('No se pudo abrir /ws/mix-stream'));
-        ws.onclose = () => {
-          if (!resolved) {
-            resolved = true;
-            if (pcmChunks.length) resolve();
-            else reject(new Error('Streaming cerrado sin audio'));
-          }
-        };
-      });
+      // P2 modernization: Promise.withResolvers() — resolve/reject son
+      // idempotentes (llamar dos veces es noop), así no necesitamos el
+      // flag `let resolved` para prevenir double-resolution.
+      const { promise, resolve, reject } = Promise.withResolvers();
+      const ws = new WebSocket(wsHandle.url, wsHandle.protocols);
+      serverPreview.ws = ws;
+      ws.binaryType = 'arraybuffer';
+      ws.onopen = () => {
+        ws.send(JSON.stringify({
+          session_id: mixerState.sessionId,
+          stem_names: names,
+          stem_library_ids: (typeof window.buildStemLibraryIdMap === 'function' ? window.buildStemLibraryIdMap(names) : {}),
+          stem_params: stemParams,
+          mix_params: mixParamsPayload,
+          chunk_seconds: 1.0,
+          preview_seconds: 12,
+          sr: 44100,
+        }));
+      };
+      ws.onmessage = (ev) => {
+        if (typeof ev.data === 'string') {
+          let msg; try { msg = JSON.parse(ev.data); } catch (e) { return; }
+          if (msg.event === 'chunk') { sampleRate = msg.sample_rate; channels = msg.channels; }
+          if (msg.event === 'error') reject(new Error(msg.message || 'Error de preview'));
+          if (msg.event === 'done') resolve();
+        } else {
+          pcmChunks.push(ev.data);
+        }
+      };
+      ws.onerror = () => reject(new Error('No se pudo abrir /ws/mix-stream'));
+      ws.onclose = () => {
+        if (pcmChunks.length) resolve();
+        else reject(new Error('Streaming cerrado sin audio'));
+      };
+      await promise;
 
       if (typeof wavBlobFromPcm16 === 'function') {
         const blob = wavBlobFromPcm16(pcmChunks, sampleRate, channels);
