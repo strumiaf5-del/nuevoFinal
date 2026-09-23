@@ -61,7 +61,12 @@
   }
 
   function authToken() {
-    return sessionStorage.getItem(TOKEN_KEY) || '';
+    // SEC-A-01: el token JWT vive en cookie HttpOnly (server-controlled).
+    // JS no puede leerla (intencional — evita exfiltración via XSS).
+    // Devolvemos string vacío: apiFetch manda solo la cookie via el browser,
+    // no el header Authorization. Si el caller necesita Authorization header
+    // explícito (p.ej. WS ticket exchange), debe poblarlo manualmente.
+    return '';
   }
 
   function csrfToken() {
@@ -72,9 +77,11 @@
   }
 
   function authHeaders(extra, method = 'GET') {
+    // SEC-A-01: el browser manda la cookie HttpOnly 'lgmdm_access_token'
+    // automáticamente — no seteamos Authorization header. CSRF token sigue
+    // siendo necesario para métodos no-safe como defensa contra CSRF sobre
+    // cookies autenticadas.
     const headers = { ...(extra || {}) };
-    const token = authToken();
-    if (token) headers.Authorization = `Bearer ${token}`;
     const normalizedMethod = String(method || 'GET').toUpperCase();
     if (!SAFE_METHODS.has(normalizedMethod)) {
       const csrf = csrfToken();

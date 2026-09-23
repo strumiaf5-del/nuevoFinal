@@ -13,7 +13,9 @@
   // ── Helpers ───────────────────────────────────────────────────────────────
 
   function clearRetiredSessionKeys() {
-    // LGMDM.persist.session centraliza sessionStorage con safe-parse/stringify.
+    // SEC-A-01: el token ahora vive en cookie HttpOnly (server-controlled).
+    // sessionStorage solo guarda info de UI (user object). Limpiamos por
+    // si quedó basura de una sesión anterior.
     try {
       LGMDM.persist.session.remove(TOKEN_KEY);
       LGMDM.persist.session.remove(USER_KEY);
@@ -21,17 +23,26 @@
   }
 
   function saveSession(token, user) {
-    LGMDM.persist.session.set(TOKEN_KEY, token);
+    // token se ignora — el backend ya lo guardó en cookie HttpOnly. Igual
+    // lo aceptamos en la firma por compat con callers existentes.
+    void token;
     LGMDM.persist.session.setJSON(USER_KEY, user);
     clearRetiredSessionKeys();
   }
 
-  function clearSession() {
-    LGMDM.persist.session.remove(TOKEN_KEY);
+  async function clearSession() {
+    // SEC-A-01: server-side cookie cleanup via /auth/logout. Si falla (red,
+    // sesión expirada), limpiamos localStorage igual — el cookie server-side
+    // vence solo por max-age o por próximo login.
+    try {
+      await LGMDM.api.apiFetch('/auth/logout', { method: 'POST' });
+    } catch (_) {}
     LGMDM.persist.session.remove(USER_KEY);
     clearRetiredSessionKeys();
   }
 
+  // getToken() queda para compat — siempre devuelve null porque el token
+  // vive en cookie HttpOnly que JS no puede leer (intencional).
   function getToken() {
     return LGMDM.persist.session.get(TOKEN_KEY);
   }

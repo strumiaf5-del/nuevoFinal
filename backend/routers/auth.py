@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel
 
 try:
     from ..auth import (
         get_admin_user,
         get_current_user,
+        clear_auth_cookie,
         handle_approve_user,
         handle_change_password,
         handle_delete_user,
@@ -16,11 +17,13 @@ try:
         handle_ws_ticket,
         handle_register,
         handle_reject_user,
+        set_auth_cookie,
     )
 except ImportError:
     from auth import (
         get_admin_user,
         get_current_user,
+        clear_auth_cookie,
         handle_approve_user,
         handle_change_password,
         handle_delete_user,
@@ -30,6 +33,7 @@ except ImportError:
         handle_ws_ticket,
         handle_register,
         handle_reject_user,
+        set_auth_cookie,
     )
 
 
@@ -73,16 +77,33 @@ def create_auth_router(*, logger, limiter) -> APIRouter:
     # credenciales. Sin esto, un atacante podía probar miles de passwords por
     # minuto contra handle_login (PBKDF2 es lento pero la IP sin throttle es
     # gratis). Frena el vector antes de verificar el JWT.
+    # SEC-A-01: además del access_token en el body, setea cookie HttpOnly
+    # con SameSite=Strict para que el browser la mande sola en requests
+    # siguientes. Secure=False en HTTP (localhost dev), True en producción.
     @router.post("/auth/login", tags=["Auth"])
     @limiter.limit("5/minute")
-    def login(request: Request, req: LoginRequest):
+    def login(request: Request, response: Response, req: LoginRequest):
         try:
             result = handle_login(req.email, req.password)
+            token = result.get("access_token")
+            if token:
+                is_https = request.url.scheme == "https"
+                set_auth_cookie(response, token, secure=is_https)
             logger.info(f"🔓 Login exitoso: {req.email}")
             return result
         except HTTPException as exc:
             logger.warning(f"❌ Login fallido: {req.email} - {exc.detail}")
             raise
+
+    # ── /auth/logout ────────────────────────────────────────────────────
+    # SEC-A-01: limpia la cookie HttpOnly. Frontend también borra
+    # sessionStorage en su lado, pero la cookie es server-controlled.
+    @router.post("/auth/logout", tags=["Auth"])
+    def logout(request: Request, response: Response):
+        is_https = request.url.scheme == "https"
+        clear_auth_cookie(response, secure=is_https)
+        logger.info("🚪 Sesión cerrada (cookie limpiada)")
+        return {"logged_out": True}
 
     @router.get("/auth/ws-ticket", tags=["Auth"])
     def ws_ticket(current_user: dict = Depends(get_current_user)):

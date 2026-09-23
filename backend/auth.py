@@ -18,7 +18,8 @@ Admin: se crea automáticamente al arrancar si no existe. Credenciales en .env:
 
 import os, json, uuid, hashlib, hmac, time, base64, threading, secrets, string
 from typing import Optional
-from fastapi import HTTPException, Depends, Header
+from fastapi import HTTPException, Depends, Header, Cookie, Response
+from typing import Optional
 import logging
 
 try:
@@ -191,10 +192,21 @@ def bootstrap_admin() -> None:
 
 # ── FastAPI dependency: usuario actual ────────────────────────────────────────
 
-def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
-    if not authorization or not authorization.startswith("Bearer "):
+def get_current_user(
+    authorization: Optional[str] = Header(None),
+    lgmdm_access_token: Optional[str] = Cookie(None),
+) -> dict:
+    """Auth vía cookie HttpOnly (preferido) o Authorization header (backward compat).
+    SEC-A-01: cookie HttpOnly evita que un XSS residual (e.g. SEC-M03) pueda
+    exfiltar el token via document.cookie. Sigue aceptando Authorization
+    header para clientes no-browser (curl, scripts, postman)."""
+    token = None
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.split(" ", 1)[1]
+    elif lgmdm_access_token:
+        token = lgmdm_access_token
+    if not token:
         raise HTTPException(status_code=401, detail="Se requiere autenticación")
-    token = authorization.split(" ", 1)[1]
     payload = _verify_jwt(token)
     user = _get_user_by_id(payload["sub"])
     if not user:
@@ -202,6 +214,37 @@ def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
     if user["status"] != "approved":
         raise HTTPException(status_code=403, detail="Tu cuenta está pendiente de aprobación")
     return user
+
+
+# ── Cookie helpers (SEC-A-01) ──────────────────────────────────────────────────
+
+AUTH_COOKIE_NAME = "lgmdm_access_token"
+AUTH_COOKIE_MAX_AGE_SEC = JWT_EXPIRY_SEC
+
+
+def set_auth_cookie(response: Response, token: str, secure: bool = True) -> None:
+    """Setea cookie HttpOnly con el JWT. Secure flag depende del transporte —
+    en localhost (HTTP) lo apagamos para que el browser la acepte; en
+    producción (HTTPS) Secure=True."""
+    response.set_cookie(
+        key=AUTH_COOKIE_NAME,
+        value=token,
+        max_age=AUTH_COOKIE_MAX_AGE_SEC,
+        path="/",
+        secure=secure,
+        httponly=True,
+        samesite="strict",
+    )
+
+
+def clear_auth_cookie(response: Response, secure: bool = True) -> None:
+    response.delete_cookie(
+        key=AUTH_COOKIE_NAME,
+        path="/",
+        secure=secure,
+        httponly=True,
+        samesite="strict",
+    )
 
 def get_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
     if current_user.get("role") != "admin":
