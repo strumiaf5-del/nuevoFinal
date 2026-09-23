@@ -16,15 +16,18 @@ LAYOUT — sidebar + contenido
     scrollbar-color: var(--ui-border-2) transparent;
   }
 
-  /* Sidebar collapsed state — see layout-shell.css for canonical .sidebar-toggle-btn */
-  .main-container > .sidebar.collapsed {
+  /* Sidebar collapsed state — see layout-shell.css for canonical .sidebar-toggle-btn.
+     P2 CSS-I-8: el selector .main-container > X se wrappeó con :where() en
+     layout-shell.css para specificity 0,1,0. Acá podemos usar .sidebar.X
+     sin coupling al padre. */
+  .sidebar.collapsed {
     width: 0;
     min-width: 0;
     padding: 0;
     overflow: hidden;
     border-right-width: 0;
   }
-  .main-container > .sidebar.collapsed ~ .resize-handle { display: none; }
+  .sidebar.collapsed ~ .resize-handle { display: none; }
 
   /* Handle de resize drag ── */
   .resize-handle {

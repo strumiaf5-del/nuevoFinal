@@ -64,7 +64,7 @@ body {
   transition: grid-template-columns 240ms ease-out;
 }
 
-.main-container > .sidebar {
+:where(.main-container) > .sidebar {
   grid-column: 1;
   grid-row: 1;
   width: auto;
@@ -116,7 +116,7 @@ body {
   box-shadow: 0 0 10px rgba(35, 231, 255, .25);
 }
 
-.main-container > .content-area {
+:where(.main-container) > .content-area {
   grid-column: 3;
   grid-row: 1;
   min-width: 0;
@@ -132,8 +132,8 @@ body {
   padding: var(--lg-content-pad-y) var(--lg-content-pad-x);
 }
 
-.main-container > .content-area .content-shell,
-.main-container > .content-area > .content {
+:where(.main-container) > .content-area .content-shell,
+:where(.main-container) > .content-area > .content {
   width: min(100%, 1480px);
   max-width: 1480px;
   min-width: 0;
