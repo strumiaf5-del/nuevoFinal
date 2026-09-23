@@ -84,7 +84,7 @@
     }
 
     self.onmessage = function(e) {
-      const { hp, lp, air, shelfFreq, lowShelfGain, lowShelfFreq, bands, SR, W } = e.data;
+      const { hp, lp, air, shelfFreq, lowShelfGain, lowShelfFreq, bands, SR, W, _seq } = e.data;
       const freqs = [];
       for (let i = 0; i < W; i++) {
         freqs.push(Math.pow(10, Math.log10(20) + (i / (W - 1)) * (Math.log10(20000) - Math.log10(20))));
@@ -99,25 +99,38 @@
         g += lowShelfResponse(f, lowShelfFreq || 100, lowShelfGain, SR);
         return g;
       });
-      self.postMessage({ gains, freqs });
+      self.postMessage({ gains, freqs, _seq });
     };
   `;
   const blob = new Blob([workerCode], { type: 'application/javascript' });
   const workerUrl = URL.createObjectURL(blob);
   const eqWorker = new Worker(workerUrl);
   setTimeout(() => URL.revokeObjectURL(workerUrl), 1000);
-  let eqCallback = null;
+  let nextSeq = 0;
+  let latestSeq = 0;
+  const pendingCallbacks = new Map();
 
   // ── Función pública para pedir el cálculo al worker ──────────
   function computeEQCurve(params, callback) {
-    eqCallback = callback;
-    eqWorker.postMessage(params);
+    const seq = nextSeq++;
+    pendingCallbacks.set(seq, callback);
+    latestSeq = seq;
+    eqWorker.postMessage({ ...params, _seq: seq });
   }
 
   eqWorker.onmessage = function(e) {
-    if (eqCallback) {
-      eqCallback(e.data);
-      eqCallback = null;
+    const seq = e.data && e.data._seq;
+    if (seq === undefined || seq !== latestSeq) {
+      if (pendingCallbacks.has(seq)) {
+        pendingCallbacks.delete(seq);
+      }
+      return;
+    }
+    const callback = pendingCallbacks.get(seq);
+    if (callback) {
+      pendingCallbacks.delete(seq);
+      const { _seq, ...result } = e.data;
+      callback(result);
     }
   };
 

@@ -789,7 +789,7 @@
         try { window.LGMDM.ab.setMode(targetMode); } catch (_) {}
       }
       if (typeof window.LGMDM?.console?.setAB === 'function') {
-        try { window.LGMDM.console.setAB(targetMode); } catch (_) {}
+        try { window.LGMDM.masterConsole.setAB(targetMode); } catch (_) {}
       }
 
       try {
@@ -2693,7 +2693,7 @@
           <div class="pro-meter-card">
             <strong class="pro-card-title">📁 Archivo de Audio</strong>
             <p class="pro-caption-muted">
-              Pista actual: <span class="pro-current-file">${getSelectedFile() ? getSelectedFile().name : 'Ningún archivo cargado en consola'}</span>
+              Pista actual: <span class="pro-current-file">${getSelectedFile() ? window.LGMDM.ui.escapeHtml(getSelectedFile().name) : 'Ningún archivo cargado en consola'}</span>
             </p>
             <div class="pro-section-gap-tight">
               <label class="pro-label-muted">O seleccionar archivo alternativo:</label>

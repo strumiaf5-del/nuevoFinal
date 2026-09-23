@@ -11,7 +11,6 @@
 (function (global) {
   "use strict";
   const proFeatures = global.LGMDM = global.LGMDM || {};
-  proFeatures.proFeatures = proFeatures.proFeatures || {};
 
   function renderComplianceTab(container, metrics) {
     if (typeof global._lgmdmRenderComplianceTab === "function") {
@@ -24,6 +23,6 @@
     </div>`;
   }
 
-  proFeatures.proFeatures.tabs = proFeatures.proFeatures.tabs || {};
-  proFeatures.proFeatures.tabs.compliance = renderComplianceTab;
+  proFeatures.tabs = proFeatures.tabs || {};
+  proFeatures.tabs.compliance = renderComplianceTab;
 })(window);

@@ -1,5 +1,6 @@
 // ============================================================
 // loudness-war-widget.js — F4.4 Loudness War Detector Timeline
+// Carga: tras 36-base-canvas-widget.js (extiende globalThis.BaseCanvasWidget)
 // ============================================================
 // UI lógica: canvas 800×300 con timeline horizontal, eje X tiempo,
 // eje Y DR score (-2 a +20), polyline DR por sección (cada 3s),

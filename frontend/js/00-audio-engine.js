@@ -42,5 +42,9 @@
   }
 
   LG.audio = Object.assign(LG.audio || {}, { getContext, resume, decode, createBufferSource, shutdown });
+  global.addEventListener('pagehide', () => { shutdown(); }, { once: true });
+  global.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') shutdown();
+  });
   global.addEventListener('beforeunload', () => { shutdown(); }, { once: true });
 })(window);

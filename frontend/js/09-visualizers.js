@@ -260,8 +260,7 @@ let _abMode         = "master";
 let _abNode         = null;   // AudioBufferSourceNode activo
 let _abStartTime    = 0;      // AudioContext.currentTime cuando arrancó la reproducción
 let _abOffset       = 0;      // posición en el buffer al momento de arrancar
-let _abPlaying      = false;
-let _abRafId        = null;
+ let _abPlaying      = false;
 let _abGain         = null;
 let _abUiTimer      = null;
 
@@ -378,6 +377,10 @@ function _abStop() {
     _abNode = null;
   }
   _abPlaying = false;
+  if (_abUiTimer) {
+    clearInterval(_abUiTimer);
+    _abUiTimer = null;
+  }
 }
 
 function _abPlay(buf, offset) {
@@ -667,7 +670,14 @@ window.renderPerceptualStandalone = renderPerceptualStandalone;
 window.setupABPlayer = setupABPlayer;
 window.setPreviewStatus = setPreviewStatus;
 window.LGMDM = window.LGMDM || {};
-window.LGMDM.visualizers = Object.assign(window.LGMDM.visualizers || {}, { renderFFT, renderAnalysisSingle, renderAnalysisComparison, renderPerceptualStandalone, setupABPlayer, setPreviewStatus });
+ window.LGMDM.visualizers = Object.assign(window.LGMDM.visualizers || {}, { renderFFT, renderAnalysisSingle, renderAnalysisComparison, renderPerceptualStandalone, setupABPlayer, setPreviewStatus });
+
+window.addEventListener('pagehide', () => {
+  if (_abUiTimer) {
+    clearInterval(_abUiTimer);
+    _abUiTimer = null;
+  }
+});
 
 })();
 

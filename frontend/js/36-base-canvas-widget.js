@@ -15,6 +15,11 @@
 //   - resize()                manual resize
 //   - destroy()               cleanup completo
 // ============================================================
+// Dependent widgets — extienden globalThis.BaseCanvasWidget y DEBEN
+// cargarse DESPUÉS de este script (ver index.html, sección pro-features):
+//   saturation-widget.js, ms-imager-widget.js, loudness-war-widget.js,
+//   loudness-penalty-widget.js, phase-rotation-widget.js
+// ============================================================
 
 (function (global) {
   "use strict";

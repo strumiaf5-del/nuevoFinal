@@ -1,6 +1,7 @@
 // ============================================================
 // pro-features/ms-imager-widget.js
 // F3.3 — M/S Imager correlation meter
+// Carga: tras 36-base-canvas-widget.js (extiende globalThis.BaseCanvasWidget)
 // ============================================================
 (function (global) {
   'use strict';

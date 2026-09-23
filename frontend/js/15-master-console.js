@@ -1,7 +1,7 @@
 (() => {
   'use strict';
   const root = window.LGMDM = window.LGMDM || {};
-  root.console = root.console || {};
+  root.masterConsole = root.masterConsole || {};
   const $ = (id) => document.getElementById(id);
   const state = {
     raf: 0, start: performance.now(), playing: false, audio: null,
@@ -280,12 +280,12 @@
     }
   }
 
-  root.console.syncChainMeters = syncChainMeters;
+  root.masterConsole.syncChainMeters = syncChainMeters;
 
         function scheduleConsolePreview(){
     if (state.applying) return;
-    clearTimeout(root.console.previewTimer);
-    root.console.previewTimer = setTimeout(() => {
+    clearTimeout(root.masterConsole.previewTimer);
+    root.masterConsole.previewTimer = setTimeout(() => {
       window.LGMDM?.previewController?.request?.();
     }, 350);
   }
@@ -377,11 +377,11 @@
       state.unsubscribeMetrics?.();
       state.unsubscribeMetrics = metricsStore.subscribe(({ metrics }) => {
         state.metrics = metrics || null;
-        root.console.syncChainMeters?.(metrics);
+        root.masterConsole.syncChainMeters?.(metrics);
       });
     }
   }
-  root.console.setStageBypass = (stage, bypass) => {
+  root.masterConsole.setStageBypass = (stage, bypass) => {
     if (!(stage in state.stageBypass)) throw new Error(`[Master Console] etapa desconocida: ${stage}`);
     state.stageBypass[stage] = Boolean(bypass);
     const related = {
@@ -405,18 +405,18 @@
     updateReadouts(); updateStageCards();
     scheduleConsolePreview();
   };
-  root.console.getChainOverrides = () => ({
+  root.masterConsole.getChainOverrides = () => ({
     comp_bypass: !!state.stageBypass.comp,
     stereo_bypass: !!state.stageBypass.stereo,
     limiter_bypass: !!state.stageBypass.limiter,
   });
-  root.console.setAB=setAB; root.console.toggleAB=toggleAB; root.console.schedulePreview=scheduleConsolePreview;
+  root.masterConsole.setAB=setAB; root.masterConsole.toggleAB=toggleAB; root.masterConsole.schedulePreview=scheduleConsolePreview;
   function teardown(){
     if(state.raf){ cancelAnimationFrame(state.raf); state.raf=0; }
     if(state._fileNameObserver){ state._fileNameObserver.disconnect(); state._fileNameObserver=null; }
     if(state._waveformCleanup){ state._waveformCleanup(); state._waveformCleanup=null; }
     wired=false;
   }
-  root.console.teardown=teardown;
+  root.masterConsole.teardown=teardown;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',wire,{once:true});else wire();
 })();

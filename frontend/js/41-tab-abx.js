@@ -11,7 +11,6 @@
 (function (global) {
   "use strict";
   const proFeatures = global.LGMDM = global.LGMDM || {};
-  proFeatures.proFeatures = proFeatures.proFeatures || {};
 
   function renderAbxTab(container) {
     if (typeof global._lgmdmRenderAbxTab === "function") {
@@ -24,6 +23,6 @@
     </div>`;
   }
 
-  proFeatures.proFeatures.tabs = proFeatures.proFeatures.tabs || {};
-  proFeatures.proFeatures.tabs.abx = renderAbxTab;
+  proFeatures.tabs = proFeatures.tabs || {};
+  proFeatures.tabs.abx = renderAbxTab;
 })(window);

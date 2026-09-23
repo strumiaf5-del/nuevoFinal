@@ -1316,7 +1316,7 @@ function requireChannelChild(parent, selector, owner) {
       const res = await LGMDM.api.apiFetch('/mix/ai-suggest', { method: 'POST', body: fd });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.detail || `Error ${res.status}`);
+        throw new Error(String(err.detail || '').replace(/[<>]/g, '') || `Error ${res.status}`);
       }
       const data = await res.json();
       const suggestions = data.suggestions || {};

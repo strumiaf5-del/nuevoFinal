@@ -227,6 +227,11 @@ LGMDM.reference.bandEQ = (function() {
   let refSrcUploaded = false;
   let refRefUploaded = false;
   let debounceTimer = null;
+  let _refReconnectAttempts = 0;
+  let _refReconnectTimer = null;
+  const _refMaxReconnectAttempts = 5;
+  const _refReconnectBaseMs = 1000;
+  const _refReconnectMaxMs = 30000;
 
   function updateRefPreviewBtn() {
     const ok = !!(window.LGMDM.state.selectedFile && referenceState.file);
@@ -314,6 +319,11 @@ LGMDM.reference.bandEQ = (function() {
 
   function stopRefPreview() {
     _refPreviewActive = false;
+    if (_refReconnectTimer) {
+      clearTimeout(_refReconnectTimer);
+      _refReconnectTimer = null;
+    }
+    _refReconnectAttempts = 0;
     if (refWs) {
       try { refWs.close(); } catch(e) {}
       refWs = null;
@@ -430,17 +440,27 @@ LGMDM.reference.bandEQ = (function() {
     refWs.onerror = () => {
       if (status) status.textContent = "Error de conexión WebSocket.";
     };
-    let _refReconnectAttempts = 0;
     refWs.onclose = () => {
       const socket = refWs;
-      if (refWs === socket) refWs = null;
+      if (socket === refWs) refWs = null;
       if (status && status.textContent === "▶ Reproduciendo preview…") {
         status.textContent = "";
       }
-      if (_refReconnectAttempts < 3) {
-        _refReconnectAttempts++;
-        setTimeout(() => launchRefPreview(), 1000 * _refReconnectAttempts);
+      if (!_refPreviewActive) return;
+      if (_refReconnectAttempts >= _refMaxReconnectAttempts) {
+        if (status) status.textContent = "Conexión perdida (máx reintentos).";
+        return;
       }
+      const delay = Math.min(
+        _refReconnectBaseMs * Math.pow(2, _refReconnectAttempts),
+        _refReconnectMaxMs
+      );
+      _refReconnectAttempts++;
+      if (status) status.textContent = `Reconectando en ${Math.round(delay / 1000)}s…`;
+      _refReconnectTimer = setTimeout(() => {
+        _refReconnectTimer = null;
+        launchRefPreview();
+      }, delay);
     };
   }
 

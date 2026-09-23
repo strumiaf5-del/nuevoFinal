@@ -1,6 +1,7 @@
 // ============================================================
 // pro-features/saturation-widget.js
 // F3.5 — Saturation spectrum overlay
+// Carga: tras 36-base-canvas-widget.js (extiende globalThis.BaseCanvasWidget)
 // ============================================================
 (function (global) {
   'use strict';

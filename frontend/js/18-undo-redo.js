@@ -16,10 +16,10 @@
 
     // Guardar estado actual
     saveState(state, label = 'Change') {
-      const next = JSON.parse(JSON.stringify(state));
+      const next = structuredClone(state);
       if (this.currentState !== null) {
         this.undoStack.push({
-          state: JSON.parse(JSON.stringify(this.currentState)),
+          state: structuredClone(this.currentState),
           label,
           timestamp: Date.now(),
         });
@@ -33,12 +33,12 @@
     undo() {
       if (this.undoStack.length === 0) return null;
       this.redoStack.push({
-        state: JSON.parse(JSON.stringify(this.currentState)),
+        state: structuredClone(this.currentState),
         label: 'Redo',
         timestamp: Date.now(),
       });
       const previousState = this.undoStack.pop();
-      this.currentState = JSON.parse(JSON.stringify(previousState.state));
+      this.currentState = structuredClone(previousState.state);
       this.notifyListeners();
       return previousState;
     }
@@ -46,12 +46,12 @@
     redo() {
       if (this.redoStack.length === 0) return null;
       this.undoStack.push({
-        state: JSON.parse(JSON.stringify(this.currentState)),
+        state: structuredClone(this.currentState),
         label: 'Undo',
         timestamp: Date.now(),
       });
       const nextState = this.redoStack.pop();
-      this.currentState = JSON.parse(JSON.stringify(nextState.state));
+      this.currentState = structuredClone(nextState.state);
       this.notifyListeners();
       return nextState;
     }

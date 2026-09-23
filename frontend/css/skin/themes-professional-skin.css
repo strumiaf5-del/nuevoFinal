@@ -56,12 +56,12 @@ body::before { opacity: .16; }
 button, select, input, textarea {
   font-family: var(--ui-font-display);
 }
-.btn, .preset-btn, .lg-ghost-btn, .lg-mini-btn, .lg-transport-btn, .btn-secondary, .btn-tertiary {
+:where(.btn, .preset-btn, .lg-ghost-btn, .lg-mini-btn, .lg-transport-btn, .btn-secondary, .btn-tertiary) {
   border-color: var(--ui-border);
   background: var(--ui-panel);
   color: var(--ui-text-soft);
 }
-.btn:hover, .preset-btn:hover, .lg-ghost-btn:hover, .lg-mini-btn:hover, .lg-transport-btn:hover, .btn-secondary:hover, .btn-tertiary:hover {
+:where(.btn, .preset-btn, .lg-ghost-btn, .lg-mini-btn, .lg-transport-btn, .btn-secondary, .btn-tertiary):hover {
   border-color: var(--ui-border-strong);
   color: var(--ui-text);
 }

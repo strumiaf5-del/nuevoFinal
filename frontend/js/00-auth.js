@@ -7,7 +7,7 @@
   'use strict';
 
   const LG = window.LGMDM = window.LGMDM || {};
-  const TOKEN_KEY = 'master_auth_token';
+  const TOKEN_KEY = LG.TOKEN_KEY || 'master_auth_token'; // Fuente única: 00-api.js
   const USER_KEY  = 'master_auth_user';
 
   // ── Helpers ───────────────────────────────────────────────────────────────
@@ -297,7 +297,7 @@
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.detail || `Error de login (HTTP ${res.status})`);
+          throw new Error(String(data.detail || '').replace(/[<>]/g, '') || `Error de login (HTTP ${res.status})`);
         }
         const data = await res.json();
         saveSession(data.access_token, data.user);
@@ -343,7 +343,7 @@
         });
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.detail || `Error de registro (HTTP ${res.status})`);
+          throw new Error(String(data.detail || '').replace(/[<>]/g, '') || `Error de registro (HTTP ${res.status})`);
         }
         const data = await res.json();
         showMsg('reg-msg', '✓ Cuenta creada. Esperá la aprobación del administrador.', 'success');

@@ -1,6 +1,7 @@
 // ============================================================
 // pro-features/loudness-penalty-widget.js
 // F3.1 — Loudness Penalty badges (Spotify / Apple Music / YouTube)
+// Carga: tras 36-base-canvas-widget.js (extiende globalThis.BaseCanvasWidget)
 // ============================================================
 (function (global) {
   'use strict';

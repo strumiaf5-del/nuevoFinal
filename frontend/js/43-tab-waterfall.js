@@ -10,7 +10,6 @@
 (function (global) {
   "use strict";
   const proFeatures = global.LGMDM = global.LGMDM || {};
-  proFeatures.proFeatures = proFeatures.proFeatures || {};
 
   function renderWaterfallTab(container) {
     if (typeof global._lgmdmRenderWaterfallTab === "function") {
@@ -23,6 +22,6 @@
     </div>`;
   }
 
-  proFeatures.proFeatures.tabs = proFeatures.proFeatures.tabs || {};
-  proFeatures.proFeatures.tabs.waterfall = renderWaterfallTab;
+  proFeatures.tabs = proFeatures.tabs || {};
+  proFeatures.tabs.waterfall = renderWaterfallTab;
 })(window);

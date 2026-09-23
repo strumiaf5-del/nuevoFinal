@@ -10,7 +10,6 @@
 (function (global) {
   "use strict";
   const proFeatures = global.LGMDM = global.LGMDM || {};
-  proFeatures.proFeatures = proFeatures.proFeatures || {};
 
   function renderCodecTab(container) {
     if (typeof global._lgmdmRenderCodecTab === "function") {
@@ -23,6 +22,6 @@
     </div>`;
   }
 
-  proFeatures.proFeatures.tabs = proFeatures.proFeatures.tabs || {};
-  proFeatures.proFeatures.tabs.codec = renderCodecTab;
+  proFeatures.tabs = proFeatures.tabs || {};
+  proFeatures.tabs.codec = renderCodecTab;
 })(window);

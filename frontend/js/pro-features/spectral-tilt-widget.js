@@ -59,7 +59,6 @@
       this._mouseMove = null;
       this._mouseLeave = null;
       this._click = null;
-      this._draggingPivot = false;
     }
 
     init(canvas, options = {}) {
@@ -173,13 +172,12 @@
       const px = _xFreq(this.data.pivot_hz, r.left, r.width);
       const py = _yDb(0, r.top, r.height);
       if (Math.hypot(x - px, y - py) < 18) {
-        this._draggingPivot = true;
+        // Clic sobre el pivot: no reposicionar (área de arrastre reservada)
       } else if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
         const newPivot = _freqFromX(x, r.left, r.width);
         this.data.pivot_hz = Math.max(FMIN, Math.min(FMAX, newPivot));
         if (this.options.onPivotChange) this.options.onPivotChange(this.data.pivot_hz);
       }
-      this._draggingPivot = false;
     }
 
     update(data) {

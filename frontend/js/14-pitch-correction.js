@@ -289,7 +289,7 @@
         let errText = '';
         try {
           const errData = await response.json();
-          errText = errData.detail || errData.message;
+          errText = String(errData.detail || errData.message || '').replace(/[<>]/g, '');
         } catch (_) {
           errText = await response.text();
         }

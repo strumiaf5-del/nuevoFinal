@@ -194,8 +194,8 @@
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      background: var(--surface2);
-      border: 1px solid var(--border);
+      background: var(--ui-surface-2);
+      border: 1px solid var(--ui-border);
       border-radius: 12px;
       padding: 24px;
       max-width: 600px;
@@ -203,13 +203,13 @@
       overflow-y: auto;
       z-index: 9999;
       box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
-      color: var(--text);
-      font-family: var(--sans);
+      color: var(--ui-text);
+      font-family: var(--ui-font-display);
     `;
 
     const title = document.createElement('h2');
     title.textContent = '⌨️ Atajos de Teclado';
-    title.style.cssText = 'margin: 0 0 16px 0; font-size: 1.5em; color: var(--accent);';
+    title.style.cssText = 'margin: 0 0 16px 0; font-size: 1.5em; color: var(--ui-accent);';
     content.appendChild(title);
 
     const list = document.createElement('div');
@@ -222,14 +222,14 @@
         grid-template-columns: 140px 1fr;
         gap: 16px;
         padding: 8px;
-        border-left: 3px solid var(--accent);
+        border-left: 3px solid var(--ui-accent);
         padding-left: 12px;
       `;
 
       const kbd = document.createElement('kbd');
       kbd.style.cssText = `
-        background: var(--surface3);
-        border: 1px solid var(--border);
+        background: var(--ui-surface-3);
+        border: 1px solid var(--ui-border);
         border-radius: 4px;
         padding: 4px 8px;
         font-family: monospace;
@@ -244,11 +244,11 @@
       
       const label = document.createElement('strong');
       label.textContent = action.label;
-      label.style.color = 'var(--text)';
+      label.style.color = 'var(--ui-text)';
       
       const explanation = document.createElement('small');
       explanation.textContent = action.description;
-      explanation.style.color = 'var(--muted)';
+      explanation.style.color = 'var(--ui-muted)';
 
       desc.appendChild(label);
       desc.appendChild(explanation);
@@ -265,7 +265,7 @@
     closeBtn.style.cssText = `
       margin-top: 16px;
       padding: 8px 16px;
-      background: var(--accent);
+      background: var(--ui-accent);
       color: white;
       border: none;
       border-radius: 6px;
@@ -318,23 +318,23 @@
       bottom: 20px;
       left: 20px;
       padding: 8px 12px;
-      background: var(--surface3);
-      border: 1px solid var(--border);
+      background: var(--ui-surface-3);
+      border: 1px solid var(--ui-border);
       border-radius: 6px;
       font-size: 0.85em;
-      color: var(--muted);
+      color: var(--ui-muted);
       z-index: 9997;
       cursor: help;
     `;
     indicator.textContent = 'Presiona ? para ver atajos';
     indicator.addEventListener('click', window.LGMDM?.shortcuts?.show);
     indicator.addEventListener('mouseenter', () => {
-      indicator.style.background = 'var(--surface2)';
-      indicator.style.color = 'var(--text)';
+      indicator.style.background = 'var(--ui-surface-2)';
+      indicator.style.color = 'var(--ui-text)';
     });
     indicator.addEventListener('mouseleave', () => {
-      indicator.style.background = 'var(--surface3)';
-      indicator.style.color = 'var(--muted)';
+      indicator.style.background = 'var(--ui-surface-3)';
+      indicator.style.color = 'var(--ui-muted)';
     });
     document.body.appendChild(indicator);
   }

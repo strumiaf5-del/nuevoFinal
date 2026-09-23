@@ -428,7 +428,7 @@
       document.body.classList.remove('lgmdm-layout-dragging');
       document.body.style.userSelect = '';
       document.body.style.webkitUserSelect = '';
-      if (typeof persistFromDom === 'function') persistFromDom();
+      persistFromDom();
     }
 
     titlebar.addEventListener('mousedown', (e) => {

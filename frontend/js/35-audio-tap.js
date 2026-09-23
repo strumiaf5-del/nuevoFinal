@@ -71,7 +71,8 @@
         masterOut.connect(ctx.destination);
         source = mediaSource;
         sourceType = 'media-element';
-      } catch (_) {
+      } catch (e) {
+        console.warn('[audio-tap] createMediaElementSource falló (¿elemento ya enganchado a otro AudioContext?):', e.message);
         return null;
       }
     }

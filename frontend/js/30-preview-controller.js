@@ -329,7 +329,12 @@
           throw new Error(detail);
         }
 
-        const blob = await res.blob();
+        let blob;
+        try {
+          blob = await res.blob();
+        } catch (e) {
+          throw new Error(`No se pudo leer el body del preview: ${e.message}`);
+        }
         if (!isRenderActive(current)) return false;
 
         const previewId = res.headers.get('X-Preview-ID');
@@ -340,7 +345,7 @@
               method:'GET', signal:current.controller.signal, timeout:10000, maxRetries:0
             });
             if (telemetryRes.ok) telemetry = await telemetryRes.json();
-          } catch (_) { /* telemetría opcional — el audio ya está listo */ }
+          } catch (e) { console.warn('[preview] telemetry fetch failed:', e.message); }
         } else {
           console.debug('[preview] X-Preview-ID ausente — telemetría omitida (audio se reproduce igual)');
         }
@@ -351,7 +356,7 @@
         if (typeof LG.metrics?.publish === 'function' && telemetry) {
           const flat = telemetry.meters ? Object.assign({}, telemetry, telemetry.meters) : telemetry;
           try { LG.metrics.publish(flat, { source: 'preview-telemetry' }); }
-          catch (_) { /* telemetría opcional */ }
+          catch (e) { console.warn('[preview] telemetry publish failed:', e.message); }
         }
         // FIX 1: arrancar polling live de metrics cada 2s — alimenta GR/LUFS
         // bars en tiempo real (no solo al final del render).

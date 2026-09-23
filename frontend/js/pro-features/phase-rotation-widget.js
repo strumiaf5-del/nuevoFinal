@@ -1,6 +1,7 @@
 // ============================================================
 // pro-features/phase-rotation-widget.js
 // F3.6 — Phase Rotation phase plot (heatmap phase × freq)
+// Carga: tras 36-base-canvas-widget.js (extiende globalThis.BaseCanvasWidget)
 // ============================================================
 (function (global) {
   'use strict';
@@ -404,7 +405,7 @@
   // obsoleto. El 404 sigue manejándose aquí para marcar cada banda como
   // `unavailable: true` y permitir que el caller pinte "endpoint no disponible".
   Widget.processAllBands = async function (file, bands, _token) {
-    if (!Array.isArray(bands)) bands = (Widget.prototype.constructor.prototype.data && Widget.prototype.constructor.prototype.data.bands) || [];
+    if (!Array.isArray(bands)) bands = BANDS_DEFAULT.slice();
     const results = [];
     const apiFetchFn = (typeof LGMDM !== 'undefined' && LGMDM.api && typeof LGMDM.api.apiFetch === 'function')
       ? LGMDM.api.apiFetch

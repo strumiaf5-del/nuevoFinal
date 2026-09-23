@@ -6,6 +6,8 @@
   'use strict';
 
   const TOKEN_KEY = 'master_auth_token';
+  global.LGMDM = global.LGMDM || {};
+  global.LGMDM.TOKEN_KEY = TOKEN_KEY; // Fuente única (00-auth.js la consume)
   const CSRF_META_SELECTOR = 'meta[name=\"lgmdm-csrf-token\"]';
   const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
   const DEFAULT_API_ORIGIN = (function() {
@@ -225,14 +227,14 @@
     if (res.status === 401 || res.status === 403) {
       window.dispatchEvent(new CustomEvent('lgmdm:auth-required', { detail: { status: res.status, path: String(path) } }));
       let detail = 'Sesión expirada. Iniciá sesión nuevamente para descargar.';
-      try { const data = await res.clone().json(); detail = data.detail || detail; } catch (_) {}
+      try { const data = await res.clone().json(); detail = String(data.detail || '').replace(/[<>]/g, '') || detail; } catch (_) {}
       const err = new Error(detail);
       err.status = res.status;
       throw err;
     }
     if (!res.ok) {
       let detail = `Error de descarga (HTTP ${res.status})`;
-      try { const data = await res.clone().json(); detail = data.detail || detail; } catch (_) {}
+      try { const data = await res.clone().json(); detail = String(data.detail || '').replace(/[<>]/g, '') || detail; } catch (_) {}
       const err = new Error(detail);
       err.status = res.status;
       throw err;
