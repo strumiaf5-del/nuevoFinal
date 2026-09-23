@@ -174,6 +174,7 @@
           const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/preset/${name}`);
           if (!res.ok) throw new Error(await res.text());
           const data = await res.json();
+          validatePresetData(data);
           applyPresetToUI(data);
           activePreset = name;
           document
@@ -186,6 +187,53 @@
       document.querySelectorAll(".preset-btn").forEach((btn) => {
         btn.addEventListener("click", () => loadAndApplyPreset(btn.dataset.preset));
       });
+
+      // ── Validación de preset JSON ─────────────────────────────────────────────
+      // SEC-M-05: un preset JSON local podría traer claves desconocidas que
+      // ApplyPresToUI ignore silenciosamente, o valores numéricos fuera de
+      // rango que revienten el engine downstream. Esta whitelist limita el
+      // universo de claves aceptables y rechaza el resto con error visible.
+      const ALLOWED_PRESET_KEYS = new Set([
+        ...Object.values(sliderIdToParam),
+        "use_lufs_normalize",
+        "adaptive_loudness_weighting",
+        "loudness_sensitivity_amount",
+        "use_stereo_enhancer",
+        "comp_stereo_link",
+        "nr_bypass",
+        "nr_strength",
+        "nr_noise_sample_sec",
+        "parallel_bypass",
+        "parallel_mix",
+        "parallel_threshold_db",
+        "parallel_ratio",
+        "parallel_attack_ms",
+        "parallel_release_ms",
+        "glue_bypass",
+        "saturation_mode",
+        "oversample_mode",
+        "mb_bypass",
+        "dyneq_bypass",
+        "reso_bypass",
+        "ms_eq_bypass",
+        "ms_comp_bypass",
+        "eq_mode",
+        "name",
+      ]);
+
+      function validatePresetData(data) {
+        if (data == null || typeof data !== "object" || Array.isArray(data)) {
+          throw new Error("Preset: top-level debe ser un objeto");
+        }
+        const unknown = [];
+        for (const k of Object.keys(data)) {
+          if (!ALLOWED_PRESET_KEYS.has(k)) unknown.push(k);
+        }
+        if (unknown.length) {
+          throw new Error(`Preset: claves no reconocidas (${unknown.slice(0, 3).join(", ")}${unknown.length > 3 ? `, +${unknown.length - 3} más` : ""})`);
+        }
+        return data;
+      }
 
       // ── Cargar preset desde archivo JSON ────────────────────────────────────────
       LGMDM.dom.requireById("btnLoadPresetJson", "03-presets.js")?.addEventListener("click", () => {
@@ -202,6 +250,7 @@
           const data = JSON.parse(text);
           // admite tanto { params: {...} } / { settings: {...} } como el objeto plano de parámetros
           const presetData = data.params || data.settings || data;
+          validatePresetData(presetData);
           applyPresetToUI(presetData);
           document.querySelectorAll(".preset-btn.active").forEach((b) => b.classList.remove("active"));
           activePreset = data.name || file.name.replace(/\.json$/i, "");
@@ -210,7 +259,7 @@
         } catch (err) {
           console.debug("Error cargando preset JSON:", err);
           statusEl.style.color = "var(--ui-danger)";
-          statusEl.textContent = "Error: JSON inválido o parámetros no reconocidos";
+          statusEl.textContent = `Error: ${err && err.message ? err.message : "JSON inválido"}`;
         } finally {
           e.target.value = "";
         }
