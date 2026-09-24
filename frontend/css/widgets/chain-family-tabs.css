@@ -4,7 +4,8 @@
    Resuelve MX-04 (CSS inexistente para chain-family-tabs).
    ════════════════════════════════════════════════════════════════ */
 
-.chain-family-tabs {
+@layer sidebar {
+  .chain-family-tabs {
     display: flex;
     gap: 4px;
     padding: 6px 8px;
@@ -47,8 +48,10 @@
   .chain-family-tab.active {
     color: var(--ui-text, #eef3ff);
     border-color: var(--ui-accent, #42e8ff);
-    background: color-mix(in srgb, var(--ui-accent) 12%, var(--ui-surface-2));
+    background: color-mix(in srgb, var(--ui-accent, #42e8ff) 12%, var(--ui-surface-2));
   }
+
+  /* .chain-family-visible: Marcador de nodos visibles de la familia activa (controlado por node.hidden en JS). */
 
   /* ── R2: split vertical 2 columnas ── */
   #pasoCadena.chain-r2 .process-card-body {
@@ -66,6 +69,7 @@
     min-width: 80px;
     padding: 6px 10px;
   }
+}
 
 /* Toggle button para activar/desactivar R2 (sticky en la sidebar) */
 .chain-r2-toggle {
@@ -74,7 +78,7 @@
   align-items: center;
   gap: 6px;
   font-size: var(--space-3);
-  color: var(--ui-muted, var(--ui-muted));
+  color: var(--ui-muted, #94a3b8);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }

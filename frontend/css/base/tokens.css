@@ -14,8 +14,8 @@
 
 :root {
   /* ── Tipografía ── */
-  --sans: var(--ui-font-display);
-  --mono: var(--ui-font-mono);
+  --sans: var(--ui-font-display, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif);
+  --mono: var(--ui-font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace);
 
   /* ── Radii ── */
   --radius-xs:   4px;

@@ -1,17 +1,20 @@
 /* ═══════════════════════════════════════════════════════════
-   themes.css — Theme switcher UI (lo ÚNICO que no redefine la skin).
+   themes.css — Theme switcher UI ONLY.
    El namespace legacy `--bg/--surface/--accent/--text/--muted` se eliminó
    (Fase 2 del plan consolidado). Todos los tokens de color viven en
    themes-professional.css bajo el namespace canónico `--ui-*`.
-   P2 CSS-I-2: este archivo antes redefinía .theme-switcher-*,
-   .theme-option*, .theme-divider, .theme-shortcuts, .theme-toast
-   —todos duplicados con themes-professional-skin.css (que carga
-   al final y siempre gana). Borrados. Quedan solo .theme-switcher-btn
-   (que skin no toca), .theme-switcher-menu.hidden, y el bloque de
-   smooth transitions entre temas.
    ═══════════════════════════════════════════════════════════ */
 
-/* ── Botón del switcher (skin no lo redefine) ── */
+/* ═══════════════════════════════════════════════════════════
+   THEME SWITCHER UI
+   ═══════════════════════════════════════════════════════════ */
+
+.theme-switcher-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .theme-switcher-btn {
   display: flex;
   align-items: center;
@@ -32,13 +35,121 @@
   transform: scale(1.05);
 }
 
-/* ── Estado oculto del menú (skin define .theme-switcher-menu base) ── */
+.theme-switcher-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background: var(--ui-surface-2);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--radius);
+  padding: 12px;
+  min-width: 200px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  z-index: var(--z-switcher);
+  backdrop-filter: blur(20px);
+  transition: opacity 200ms, transform 200ms;
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .theme-switcher-menu.hidden {
   opacity: 0;
   transform: translateY(-10px);
   pointer-events: none;
   visibility: hidden;
   transition: opacity 200ms, transform 200ms, visibility 0s linear 200ms;
+}
+
+.theme-switcher-title {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--ui-muted);
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--ui-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease;
+  font-family: var(--sans);
+  text-align: left;
+}
+
+.theme-option:hover {
+  background: var(--ui-panel);
+  border-color: var(--ui-warn);
+}
+
+.theme-option.active {
+  background: var(--ui-warn-glow);
+  border-color: var(--ui-warn);
+  color: var(--ui-warn);
+  font-weight: 600;
+}
+
+.theme-option .icon {
+  font-size: 16px;
+  display: inline-block;
+  min-width: 24px;
+}
+
+.theme-divider {
+  border: none;
+  height: 1px;
+  background: var(--ui-border);
+  margin: 8px 0;
+}
+
+.theme-shortcuts {
+  font-size: 11px;
+  color: var(--ui-faint);
+  line-height: 1.4;
+  padding: 8px 12px;
+  background: var(--ui-panel);
+  border-radius: var(--radius-sm);
+  margin-top: 8px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST NOTIFICATION
+   ═══════════════════════════════════════════════════════════ */
+
+.theme-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: var(--ui-surface-2);
+  color: var(--ui-text);
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--ui-border);
+  font-size: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  transition: opacity 300ms ease, transform 300ms ease, visibility 0s linear 300ms;
+  pointer-events: none;
+  z-index: var(--z-toast);
+}
+
+.theme-toast.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  transition: opacity 300ms ease, transform 300ms ease, visibility 0s linear 0s;
 }
 
 /* ═══════════════════════════════════════════════════════════
