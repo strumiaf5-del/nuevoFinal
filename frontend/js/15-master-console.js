@@ -253,6 +253,163 @@
     }
   }
 
+  // EQ Chain Response — cascada de 10 biquads: 6 peak + LS + HS + HP + LP.
+  // Usa RBJ Audio EQ Cookbook. Multiplica magnitudes, devuelve dB por bin.
+  function computeEqChainResponse(params, freqs, fs) {
+    const N = freqs.length;
+    const dbOut = new Float32Array(N);
+    const num = [0, 0, 0], den = [0, 0, 0];
+    function magnitudeAt(f, type) {
+      // type: 'peak' | 'lowshelf' | 'highshelf' | 'lpf' | 'hpf'
+      let b0, b1, b2, a0, a1, a2;
+      const w0 = 2 * Math.PI * f / fs;
+      const cw = Math.cos(w0), sw = Math.sin(w0);
+      const A = Math.pow(10, type.gain / 40);
+      const alpha = type.Q ? (sw / (2 * type.Q)) : 0;
+      if (type.kind === 'peak') {
+        b0 = 1 + alpha * A; b1 = -2 * cw; b2 = 1 - alpha * A;
+        a0 = 1 + alpha / A; a1 = -2 * cw; a2 = 1 - alpha / A;
+      } else if (type.kind === 'lowshelf') {
+        const sqA = Math.sqrt(A);
+        b0 = A * ((A + 1) - (A - 1) * cw + 2 * sqA * alpha);
+        b1 = 2 * A * ((A - 1) - (A + 1) * cw);
+        b2 = A * ((A + 1) - (A - 1) * cw - 2 * sqA * alpha);
+        a0 = (A + 1) + (A - 1) * cw + 2 * sqA * alpha;
+        a1 = -2 * ((A - 1) + (A + 1) * cw);
+        a2 = (A + 1) + (A - 1) * cw - 2 * sqA * alpha;
+      } else if (type.kind === 'highshelf') {
+        const sqA = Math.sqrt(A);
+        b0 = A * ((A + 1) + (A - 1) * cw + 2 * sqA * alpha);
+        b1 = -2 * A * ((A - 1) + (A + 1) * cw);
+        b2 = A * ((A + 1) + (A - 1) * cw - 2 * sqA * alpha);
+        a0 = (A + 1) - (A - 1) * cw + 2 * sqA * alpha;
+        a1 = 2 * ((A - 1) - (A + 1) * cw);
+        a2 = (A + 1) - (A - 1) * cw - 2 * sqA * alpha;
+      } else if (type.kind === 'lpf') {
+        b0 = (1 - cw) / 2; b1 = 1 - cw; b2 = (1 - cw) / 2;
+        a0 = 1 + alpha; a1 = -2 * cw; a2 = 1 - alpha;
+      } else if (type.kind === 'hpf') {
+        b0 = (1 + cw) / 2; b1 = -(1 + cw); b2 = (1 + cw) / 2;
+        a0 = 1 + alpha; a1 = -2 * cw; a2 = 1 - alpha;
+      }
+      // Normalize
+      b0 /= a0; b1 /= a0; b2 /= a0; a1 /= a0; a2 /= a0;
+      // |H(e^jw)| = |b0 + b1·e^-jw + b2·e^-j2w| / |1 + a1·e^-jw + a2·e^-j2w|
+      const numRe = b0 + b1 * cw + b2 * Math.cos(2 * w0);
+      const numIm = -b1 * sw - b2 * Math.sin(2 * w0);
+      const denRe = 1 + a1 * cw + a2 * Math.cos(2 * w0);
+      const denIm = -a1 * sw - a2 * Math.sin(2 * w0);
+      const numMag = Math.sqrt(numRe * numRe + numIm * numIm);
+      const denMag = Math.sqrt(denRe * denRe + denIm * denIm);
+      return numMag / Math.max(1e-12, denMag);
+    }
+    // Collect 10 biquads from params
+    const filters = [];
+    const numF = (v, fb) => { const n = parseFloat(v); return Number.isFinite(n) ? n : fb; };
+    // HP (high-pass) — fixed gain, freq = hp_cutoff
+    const hpF = numF(params.hp_cutoff, 0);
+    if (hpF >= 20 && hpF <= 20000) filters.push({ kind: 'hpf', freq: hpF, gain: 0, Q: 0.707 });
+    // 6 parametric peaks
+    for (let i = 1; i <= 6; i++) {
+      const f = numF(params[`eq${i}_freq`], 0);
+      const g = numF(params[`eq${i}_gain`], 0);
+      const q = numF(params[`eq${i}_q`], 1);
+      if (f >= 20 && f <= 20000 && Math.abs(g) > 0.01) {
+        filters.push({ kind: 'peak', freq: f, gain: g, Q: Math.max(0.1, q) });
+      }
+    }
+    // LS (low shelf)
+    const lsF = numF(params.low_shelf_freq_hz, 0);
+    const lsG = numF(params.low_shelf_gain_db, 0);
+    if (lsF >= 20 && lsF <= 20000 && Math.abs(lsG) > 0.01) {
+      filters.push({ kind: 'lowshelf', freq: lsF, gain: lsG, Q: 0.707 });
+    }
+    // HS (high shelf)
+    const hsF = numF(params.high_shelf_freq_hz, 0);
+    const hsG = numF(params.high_shelf_gain_db, 0);
+    if (hsF >= 20 && hsF <= 20000 && Math.abs(hsG) > 0.01) {
+      filters.push({ kind: 'highshelf', freq: hsF, gain: hsG, Q: 0.707 });
+    }
+    // LP (low-pass) — bypass si lp_bypass está activo
+    const lpF = numF(params.lp_cutoff, 0);
+    const lpBypass = params.lp_bypass === true || params.lp_bypass === 'true';
+    if (!lpBypass && lpF >= 20 && lpF <= 20000) {
+      filters.push({ kind: 'lpf', freq: lpF, gain: 0, Q: 0.707 });
+    }
+    // Compute dB per freq bin
+    for (let i = 0; i < N; i++) {
+      let H = 1;
+      for (let j = 0; j < filters.length; j++) {
+        H *= magnitudeAt(freqs[i], filters[j]);
+      }
+      dbOut[i] = 20 * Math.log10(Math.max(1e-6, H));
+    }
+    return dbOut;
+  }
+
+  function drawEqChainResponse() {
+    const canvas = LGMDM.dom.byId('eqChainResponseCanvas'); if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 4 || rect.height < 4) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.floor(rect.width * dpr), H = Math.floor(rect.height * dpr);
+    if (canvas.width !== W || canvas.height !== H) { canvas.width = W; canvas.height = H; }
+    const ctx = canvas.getContext('2d'); if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    // Log-scale freq axis: 20 Hz .. 20 kHz
+    const N = 256;
+    const freqs = new Float32Array(N);
+    const fMin = Math.log10(20), fMax = Math.log10(20000);
+    for (let i = 0; i < N; i++) freqs[i] = Math.pow(10, fMin + (fMax - fMin) * i / (N - 1));
+    // Get params
+    let params = {};
+    try { params = (window.LGMDM?.params?.collect?.() || {}); } catch (_) {}
+    // fs from audio element or fallback 48000
+    const audio = state.audio || document.querySelector('#previewAudioWrap audio');
+    const fs = (audio && Number.isFinite(audio.sampleRate) && audio.sampleRate > 0) ? audio.sampleRate : 48000;
+    // dB axis: -24 .. +24
+    const dbMin = -24, dbMax = 24;
+    const dbArr = computeEqChainResponse(params, freqs, fs);
+    // Helper: x from freq (log), y from dB
+    const cw = rect.width, ch = rect.height;
+    const xOf = (f) => (Math.log10(f) - fMin) / (fMax - fMin) * cw;
+    const yOf = (db) => (dbMax - db) / (dbMax - dbMin) * ch;
+    // Grid: 0 dB line
+    ctx.strokeStyle = 'rgba(120, 130, 160, 0.45)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, yOf(0)); ctx.lineTo(cw, yOf(0));
+    ctx.stroke();
+    // Freq gridlines (1k, 10k)
+    ctx.strokeStyle = 'rgba(120, 130, 160, 0.2)';
+    [100, 1000, 10000].forEach((f) => {
+      const x = xOf(f);
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ch); ctx.stroke();
+    });
+    // Curve — fill area
+    ctx.beginPath();
+    ctx.moveTo(0, yOf(0));
+    for (let i = 0; i < N; i++) ctx.lineTo(xOf(freqs[i]), yOf(dbArr[i]));
+    ctx.lineTo(cw, yOf(0));
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, 0, 0, ch);
+    grad.addColorStop(0, 'rgba(66, 232, 255, 0.25)');
+    grad.addColorStop(0.5, 'rgba(66, 232, 255, 0.10)');
+    grad.addColorStop(1, 'rgba(66, 232, 255, 0)');
+    ctx.fillStyle = grad;
+    ctx.fill();
+    // Curve — stroke
+    ctx.beginPath();
+    for (let i = 0; i < N; i++) {
+      const x = xOf(freqs[i]), y = yOf(dbArr[i]);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = '#42e8ff';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
   function drawConsoleSpectrum() {
     const canvas = LGMDM.dom.byId('lgmdmConsoleSpectrum'); if (!canvas) return;
     const m = state.metrics || {};
@@ -416,6 +573,12 @@
     if (_waterfallCanvas && typeof window.setupCanvasResize === 'function') {
       state._waterfallCleanup = window.setupCanvasResize(_waterfallCanvas, () => drawWaterfall());
     }
+    // ResizeObserver DPR-aware para el EQ chain response canvas.
+    const _eqChainCanvas = LGMDM.dom.byId('eqChainResponseCanvas');
+    if (_eqChainCanvas && typeof window.setupCanvasResize === 'function') {
+      state._eqChainCleanup = window.setupCanvasResize(_eqChainCanvas, () => drawEqChainResponse());
+    }
+    drawEqChainResponse();
     window.addEventListener('lgmdm:preview-ready', () => { ensureScopeTap(); });
     LGMDM.dom.byId('consoleAnalyzeBtn')?.addEventListener('click',()=>{LGMDM.dom.byId('btnAnalyze')?.click();setStatus('Analizando audio…',true);});
     LGMDM.dom.byId('consoleMasterBtn')?.addEventListener('click',()=>{LGMDM.dom.byId('btnMasterAsync')?.click();setStatus('Mastering en cola…',true);});
@@ -469,7 +632,7 @@
         return;
       }
       const onConsole = document.body.dataset.workspace === "console";
-      if(onConsole){ drawWaveform(); updateConsoleStereoVu(); drawConsoleSpectrum(); drawWaterfall(); }
+      if(onConsole){ drawWaveform(); updateConsoleStereoVu(); drawConsoleSpectrum(); drawWaterfall(); drawEqChainResponse(); }
       state.audio=getPreviewAudio();
       const audio=state.audio;
       if (audio && onConsole) {

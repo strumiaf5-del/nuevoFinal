@@ -581,3 +581,14 @@
   }
 }
 
+
+/* Console workspace canvases: keep aspect-ratio / fixed height even in
+   narrow viewports. The global `canvas { height }` rules above would
+   otherwise collapse the spectrum/waterfall/eq-chain stages to 150/250/100px. */
+.lg-wave-stage canvas,
+.lg-spectrum-stage canvas,
+.lg-waterfall-stage canvas,
+.lg-eq-chain-stage canvas {
+  height: auto;
+  min-height: 0;
+}

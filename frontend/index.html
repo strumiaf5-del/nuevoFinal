@@ -27,13 +27,13 @@
 <link href="css/base/themes-professional.css" rel="stylesheet" integrity="sha384-FP4/r2MTdKKBa4go0C5XKgguVggxiTxaMB4wH53EmtX4M6d+FtzPcmBZBwmG4tFS" crossorigin="anonymous"/>
 <link href="css/layout/layout-shell.css" rel="stylesheet" integrity="sha384-2CrJ1Gc4HjxcdztMbtyKouqChhu8XYz4JtNmH5j7GAVrGlGQRWh7KafNhmyCDe82" crossorigin="anonymous"/>
 <link href="css/components/studio-pro.css" rel="stylesheet" integrity="sha384-AWzWvdUGDX3Fs3m+usVZgi31qpNQ9y2IXXEg833gnOMSHZyn3AIPrQvYyuatWDZJ" crossorigin="anonymous"/>
-<link href="css/components/lgmdm-studio.css" rel="stylesheet" integrity="sha384-hrPV8vrX9hctaDcFcOiXtNk04EQX6hgmikZfcxj4AzjnH8WMMn9Ki8B7wl8XLcXO" crossorigin="anonymous"/>
+<link href="css/components/lgmdm-studio.css" rel="stylesheet" integrity="sha384-t//lV9QZ+MO1FRarD7KyLzK1s89ZeB6pNNL13d6i6NIwxRsb7cweWFD9ABKeVDP+" crossorigin="anonymous"/>
 <link href="css/components/_index.css" rel="stylesheet" integrity="sha384-jIw/P9atwvRtx4lrevl46eIt5pPW0blZErRD6p5E5q1nfeJFuQfEvqr9qdNR6qhj" crossorigin="anonymous"/>
-<link href="css/components/lgmdm.css" rel="stylesheet" integrity="sha384-tlnIfbQzLELqulzg+ew6dC6deuuw4ISL2Q29tw2BQryw4wnmCLnswAHUNYGjuyjf" crossorigin="anonymous"/>
+<link href="css/components/lgmdm.css" rel="stylesheet" integrity="sha384-+vwirsiCD6f/CrHa1Txp6yNs1d7llBVhGPZnASY391sCpqwOG/IwFFdzWtbET9wJ" crossorigin="anonymous"/>
 <link href="css/widgets/chain-family-tabs.css" rel="stylesheet" integrity="sha384-2BiGKeejFjF8psc/awcFrNTx+uKbYyB3CdkTQLsEKOCxgpaMtASLShRs1c3aLHku" crossorigin="anonymous"/>
 <link href="css/widgets/pro-widgets-v2.css" rel="stylesheet" integrity="sha384-65Azlo/3pHxiQHkOkcpfvHcajNSaDK6s5jIshr1UDo9Y0WG0E08aA+QKO3cMimMt" crossorigin="anonymous"/>
 <link href="css/widgets/pro-insert-rack.css" rel="stylesheet" integrity="sha384-YgHrYEFNRj3Ag0rxChxwIwtB+fpARaUakj2wNlHlC2LhMbo7SyL9byQyPNdxUh5N" crossorigin="anonymous"/>
-<link href="css/layout/responsive.css" rel="stylesheet" integrity="sha384-a4UxJgGbdNH0J6j3kMOHW+XIaeBTkgAIPWfHssX9epjtwSo96B1Eda5SnqahGfxV" crossorigin="anonymous"/>
+<link href="css/layout/responsive.css" rel="stylesheet" integrity="sha384-iGXKjahlqFeTfu5b+QaBTS2g+bf9RBTX5QwWSNQAcsl4osYaHbeylpb4ZYPslN84" crossorigin="anonymous"/>
 <link href="css/skin/themes-professional-skin.css" rel="stylesheet" integrity="sha384-sV6P5fF+1H70IFMs+UO5SmE5pz6Y9g42vlhgEKdlSRYSAh643XXZXucQXMhRtuCs" crossorigin="anonymous"/>
 </head>
 <body>
@@ -1556,7 +1556,7 @@
 </div>
 </div>
 <div class="lg-wave-stage">
-<canvas aria-label="Visualización de señal" id="lgmdmWaveformCanvas" width="800" height="180"></canvas>
+<canvas aria-label="Visualización de señal" id="lgmdmWaveformCanvas" width="640" height="360"></canvas>
 <div class="lg-wave-grid"></div>
 <div class="lg-wave-marker lg-wave-marker-left">-∞</div>
 <div class="lg-wave-marker lg-wave-marker-right">0 dB</div>
@@ -1590,12 +1590,12 @@
 <div class="spectrum-freq-scale" aria-hidden="true">
 <span>20Hz</span><span>50Hz</span><span>100Hz</span><span>250Hz</span><span>500Hz</span><span>1kHz</span><span>2.5kHz</span><span>5kHz</span><span>10kHz</span><span>20kHz</span>
 </div>
-<div class="lg-waterfall-stage" id="consoleWaterfallStage">
 <div class="lg-panel-head compact">
 <div><span class="lg-panel-kicker">WATERFALL</span><strong>Spectrogram (scroll)</strong></div>
 <span class="lg-live"><i></i>LIVE</span>
 </div>
-<canvas aria-label="Waterfall espectrograma en tiempo real" id="lgmdmWaterfallCanvas" width="800" height="140"></canvas>
+<div class="lg-waterfall-stage" id="consoleWaterfallStage">
+<canvas aria-label="Waterfall espectrograma en tiempo real" id="lgmdmWaterfallCanvas" width="800" height="200"></canvas>
 </div>
 </div>
 </div>
@@ -1722,6 +1722,22 @@
   <div id="lufsTarget">Target Spotify/YouTube: -14 LUFS · Club: -9 LUFS</div>
 </div>
 </div>
+<!-- EQ Chain Response — combined response of 6 peak + LS + HS + HP + LP biquads -->
+<section aria-label="EQ Chain Response" class="lg-eq-chain-section" id="eqChainSection" data-workspace-section="console">
+<div class="lg-panel-head compact">
+<div><span class="lg-panel-kicker">EQ CHAIN</span><strong>Respuesta combinada · 6 Peak + LS + HS + HP + LP</strong></div>
+<span class="lg-live"><i></i>LIVE</span>
+</div>
+<div class="lg-eq-chain-stage" id="eqChainStage">
+<canvas aria-label="Respuesta combinada de la cadena EQ" id="eqChainResponseCanvas" width="800" height="200"></canvas>
+<div class="eq-chain-grid" aria-hidden="true">
+<span>-24 dB</span><span>-12</span><span>0</span><span>+12</span><span>+24</span>
+</div>
+<div class="eq-chain-freq-scale" aria-hidden="true">
+<span>20Hz</span><span>100</span><span>500</span><span>1k</span><span>5k</span><span>20kHz</span>
+</div>
+</div>
+</section>
 <!-- Multiband GR — always visible in Console -->
 <section aria-label="Gain Reduction" class="mb-gr-section" id="mbGrSection" data-workspace-section="console">
 <span class="lg-panel-kicker">GAIN REDUCTION</span>
@@ -1816,6 +1832,8 @@
 </div>
 </div>
 </section>
+<!-- Aurora Spectrum — sticky mini-spectrum visualizer (movido a console workspace) -->
+<div class="aurora-spectrum" aria-hidden="true"><canvas class="aurora-spectrum-canvas" id="auroraSpectrumCanvas" width="240" height="32"></canvas><span class="aurora-spectrum-label">SPECTRUM</span></div>
 </div>
 </div>
 </section>
@@ -1847,8 +1865,6 @@
 </div>
 <!-- FOOTER -->
 <footer class="app-footer"><span>App By Fede Strumia</span></footer>
-<!-- Aurora Spectrum — sticky mini-spectrum visualizer -->
-<div class="aurora-spectrum" aria-hidden="true"><canvas class="aurora-spectrum-canvas" id="auroraSpectrumCanvas" width="240" height="32"></canvas><span class="aurora-spectrum-label">SPECTRUM</span></div>
 </div>
 <!-- AI Assistant — canonical DOM contract -->
 <button aria-label="Abrir asistente de IA" class="ai-fab" id="aiFab" type="button" aria-expanded="false" aria-controls="aiPanel" aria-haspopup="dialog">🤖<span aria-hidden="true" class="ai-fab-dot"></span></button>
@@ -1898,7 +1914,7 @@
 <script defer src="js/13-mixer.js" integrity="sha384-had3e2olnNxz5b5gtbW2o16rucCnhmV/5w5k5zxZ1VzuN3C9npIvgrfRilK9sS2V" crossorigin="anonymous"></script>
 <script defer src="js/13-mixer-ui.js" integrity="sha384-UYuSoGHcCLO8sSsBwHlRoL5PaQ/HcuTZKv1hqDeDeMb23GZHLdV12NPVAB77iJuj" crossorigin="anonymous"></script>
 <script defer src="js/14-pitch-correction.js" integrity="sha384-Tsb0Tn+6iQI9jIBIghnAcpbqTtgOY0ED+ZGnGIxQawJBUE1cMRO1QO5D7jJUJeG3" crossorigin="anonymous"></script>
-<script defer src="js/15-master-console.js" integrity="sha384-whZ53blPrDENXvakTK82rYJzVKelhZeDQUP+eDRu0yChDUZRGM+8p9ZVsacgkw6N" crossorigin="anonymous"></script>
+<script defer src="js/15-master-console.js" integrity="sha384-74IGdmj10pSDc4N+utnJbot4VSwLdTDXbmJK3NeG9hgdAPfoqwrcUipeas9AI39l" crossorigin="anonymous"></script>
 <script defer src="js/18-undo-redo.js" integrity="sha384-VA6V06yJ368EIhMKrYhtG+QHBpezUlnRUPr2eci/QaxqHzY69rphN+beiiQnsogn" crossorigin="anonymous"></script>
 <script defer src="js/20-pro-upgrades.js" integrity="sha384-Vk+cEknHoyhKwmU7ErYJsTUkvhIro0Y39m0WYl9YMGZr+NjhiI0WKqt6SvizbiCO" crossorigin="anonymous"></script>
 <script defer src="js/22-tabs-handler.js" integrity="sha384-b0NykH2S6ij2C4TUbTQMwW++zkYzqkiI1Dq79Mc9nLHw3pjIQelmk7cPjyJOxAT5" crossorigin="anonymous"></script>
