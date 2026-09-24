@@ -251,196 +251,6 @@ def build_audio_context(analysis: Optional[dict], preset: Optional[str] = None,
     return "\n".join(lines)
 
 
-def build_current_params_context(current_params: Optional[dict]) -> str:
-    """Convierte los parámetros actuales de la cadena de mastering en texto legible para el modelo."""
-    if not current_params or not isinstance(current_params, dict):
-        return ""
-
-    groups = {
-        "Entrada / Nivel": [
-            ("input_gain_db", "Gain de entrada", "dB"),
-            ("target_peak", "Pico objetivo", "dBFS"),
-            ("use_lufs_normalize", "Normalizar por LUFS", None),
-            ("target_lufs", "LUFS objetivo", "LUFS"),
-            ("adaptive_loudness_weighting", "Loudness adaptativo (ISO 226)", None),
-            ("loudness_sensitivity_amount", "Sensibilidad loudness", None),
-            ("platform_target", "Plataforma target", None),
-        ],
-        "Compresor principal": [
-            ("comp_threshold_db", "Threshold", "dB"),
-            ("comp_ratio", "Ratio", ":1"),
-            ("comp_attack_ms", "Attack", "ms"),
-            ("comp_release_ms", "Release", "ms"),
-            ("comp_makeup_db", "Makeup", "dB"),
-            ("comp_pdr", "PDR activo", None),
-            ("comp_pdr_hold_ms", "PDR hold", "ms"),
-            ("comp_stereo_link", "Stereo link", None),
-            ("comp_bypass", "Bypass", None),
-        ],
-        "Compresor paralelo": [
-            ("parallel_bypass", "Bypass", None),
-            ("parallel_mix", "Mix", None),
-            ("parallel_threshold_db", "Threshold", "dB"),
-            ("parallel_ratio", "Ratio", ":1"),
-            ("parallel_attack_ms", "Attack", "ms"),
-            ("parallel_release_ms", "Release", "ms"),
-        ],
-        "Compresor Glue": [
-            ("glue_bypass", "Bypass", None),
-            ("glue_threshold_db", "Threshold", "dB"),
-            ("glue_ratio", "Ratio", ":1"),
-            ("glue_attack_ms", "Attack", "ms"),
-            ("glue_release_ms", "Release", "ms"),
-            ("glue_makeup_db", "Makeup", "dB"),
-            ("glue_pdr", "PDR activo", None),
-        ],
-        "Filtros / EQ de borde": [
-            ("hp_cutoff", "High-pass", "Hz"),
-            ("lp_bypass", "Low-pass bypass", None),
-            ("lp_cutoff", "Low-pass", "Hz"),
-            ("high_shelf_gain_db", "High shelf gain", "dB"),
-            ("high_shelf_freq_hz", "High shelf freq", "Hz"),
-            ("low_shelf_gain_db", "Low shelf gain", "dB"),
-            ("low_shelf_freq_hz", "Low shelf freq", "Hz"),
-        ],
-        "EQ paramétrica (6 bandas)": [
-            ("eq1_freq", "EQ1 freq", "Hz"), ("eq1_gain", "EQ1 gain", "dB"), ("eq1_q", "EQ1 Q", None),
-            ("eq2_freq", "EQ2 freq", "Hz"), ("eq2_gain", "EQ2 gain", "dB"), ("eq2_q", "EQ2 Q", None),
-            ("eq3_freq", "EQ3 freq", "Hz"), ("eq3_gain", "EQ3 gain", "dB"), ("eq3_q", "EQ3 Q", None),
-            ("eq4_freq", "EQ4 freq", "Hz"), ("eq4_gain", "EQ4 gain", "dB"), ("eq4_q", "EQ4 Q", None),
-            ("eq5_freq", "EQ5 freq", "Hz"), ("eq5_gain", "EQ5 gain", "dB"), ("eq5_q", "EQ5 Q", None),
-            ("eq6_freq", "EQ6 freq", "Hz"), ("eq6_gain", "EQ6 gain", "dB"), ("eq6_q", "EQ6 Q", None),
-            ("eq_mode", "Modo EQ", None),
-        ],
-        "Multibanda": [
-            ("mb_bypass", "Bypass", None),
-            ("mb_low_crossover", "Crossover bajo", "Hz"),
-            ("mb_high_crossover", "Crossover alto", "Hz"),
-            ("mb_low_threshold_db", "Low threshold", "dB"),
-            ("mb_low_ratio", "Low ratio", ":1"),
-            ("mb_low_attack_ms", "Low attack", "ms"),
-            ("mb_low_release_ms", "Low release", "ms"),
-            ("mb_low_makeup_db", "Low makeup", "dB"),
-            ("mb_mid_threshold_db", "Mid threshold", "dB"),
-            ("mb_mid_ratio", "Mid ratio", ":1"),
-            ("mb_mid_attack_ms", "Mid attack", "ms"),
-            ("mb_mid_release_ms", "Mid release", "ms"),
-            ("mb_mid_makeup_db", "Mid makeup", "dB"),
-            ("mb_high_threshold_db", "High threshold", "dB"),
-            ("mb_high_ratio", "High ratio", ":1"),
-            ("mb_high_attack_ms", "High attack", "ms"),
-            ("mb_high_release_ms", "High release", "ms"),
-            ("mb_high_makeup_db", "High makeup", "dB"),
-        ],
-        "Estéreo / M-S": [
-            ("stereo_bypass", "Stereo bypass", None),
-            ("stereo_width_amount", "Stereo width", None),
-            ("use_stereo_enhancer", "Enhancer activo", None),
-            ("haas_delay_ms", "Haas delay", "ms"),
-            ("enhancer_bass_mono_freq", "Bass mono freq", "Hz"),
-            ("mid_gain_db", "Mid gain", "dB"),
-            ("side_gain_db", "Side gain", "dB"),
-        ],
-        "M-S Compresión": [
-            ("ms_comp_bypass", "Bypass", None),
-            ("ms_comp_mid_threshold_db", "Mid threshold", "dB"),
-            ("ms_comp_mid_ratio", "Mid ratio", ":1"),
-            ("ms_comp_mid_attack_ms", "Mid attack", "ms"),
-            ("ms_comp_mid_release_ms", "Mid release", "ms"),
-            ("ms_comp_mid_makeup_db", "Mid makeup", "dB"),
-            ("ms_comp_side_threshold_db", "Side threshold", "dB"),
-            ("ms_comp_side_ratio", "Side ratio", ":1"),
-            ("ms_comp_side_attack_ms", "Side attack", "ms"),
-            ("ms_comp_side_release_ms", "Side release", "ms"),
-            ("ms_comp_side_makeup_db", "Side makeup", "dB"),
-        ],
-        "Dynamic EQ / Resonancias": [
-            ("dyneq_bypass", "Dyn EQ bypass", None),
-            ("dyneq_freq", "Dyn EQ freq", "Hz"),
-            ("dyneq_q", "Dyn EQ Q", None),
-            ("dyneq_threshold_db", "Dyn EQ threshold", "dB"),
-            ("dyneq_ratio", "Dyn EQ ratio", ":1"),
-            ("reso_bypass", "Reso bypass", None),
-            ("reso_freq", "Reso freq", "Hz"),
-            ("reso_q", "Reso Q", None),
-            ("reso_threshold_db", "Reso threshold", "dB"),
-            ("reso_ratio", "Reso ratio", ":1"),
-        ],
-        "Saturación / Transientes": [
-            ("saturation_drive", "Sat drive", None),
-            ("saturation_mode", "Sat mode", None),
-            ("saturation_mix", "Sat mix", None),
-            ("transient_attack", "Transient attack", None),
-            ("transient_sustain", "Transient sustain", None),
-        ],
-        "Clipper / Limiter / Salida": [
-            ("clipper_bypass", "Clipper bypass", None),
-            ("clipper_mode", "Clipper mode", None),
-            ("clipper_ceiling", "Clipper ceiling", "dB"),
-            ("clipper_drive_db", "Clipper drive", "dB"),
-            ("limiter_ceiling", "Limiter ceiling", "dBFS"),
-            ("limiter_release_ms", "Limiter release", "ms"),
-            ("output_format", "Formato salida", None),
-            ("output_bit_depth", "Bit depth", None),
-            ("dither_mode", "Dither", None),
-        ],
-        "Reverb / Tonal Balance / Mono": [
-            ("reverb_size", "Reverb size", None),
-            ("reverb_wet", "Reverb wet", None),
-            ("tonal_balance_bypass", "Tonal balance bypass", None),
-            ("tonal_balance_amount", "Tonal balance amount", None),
-            ("low_end_mono_freq", "Mono freq", "Hz"),
-            ("low_end_mono_amount", "Mono amount", None),
-        ],
-        "Multibanda Stereo Width": [
-            ("mb_stereo_bypass", "MB Stereo bypass", None),
-            ("mb_stereo_low_width", "MB low width", None),
-            ("mb_stereo_mid_width", "MB mid width", None),
-            ("mb_stereo_high_width", "MB high width", None),
-            ("mb_stereo_low_crossover", "MB Stereo low xover", "Hz"),
-            ("mb_stereo_high_crossover", "MB Stereo high xover", "Hz"),
-        ],
-        "Noise Reduction": [
-            ("nr_bypass", "NR bypass", None),
-            ("nr_strength", "NR strength", None),
-        ],
-        "Oversample": [
-            ("oversample_mode", "Oversample mode", None),
-        ],
-        "Preview": [
-            ("preview_start_sec", "Inicio del preview", "s"),
-        ],
-    }
-
-    lines = ["PARÁMETROS ACTUALES DE LA CADENA DE MASTERING (lo que el usuario tiene seteado ahora mismo):"]
-
-    for group_name, params in groups.items():
-        group_lines = []
-        for key, label, unit in params:
-            val = current_params.get(key)
-            if val is None or val == "":
-                continue
-            if isinstance(val, bool):
-                group_lines.append(f"    - {label}: {'activado' if val else 'desactivado'}")
-            elif unit:
-                group_lines.append(f"    - {label}: {val} {unit}")
-            else:
-                group_lines.append(f"    - {label}: {val}")
-        if group_lines:
-            lines.append(f"  [{group_name}]")
-            lines.extend(group_lines)
-
-    if len(lines) <= 1:
-        return ""
-
-    lines.append("")
-    lines.append("Estos son los valores de referencia del usuario. Cuando propongas cambios, hacelo")
-    lines.append("RELATIVO a estos parámetros actuales — no valores genéricos. Por ejemplo, si el")
-    lines.append("usuario dice 'más brillo' y high_shelf_gain_db ya está en 2, proponé 3 o 4, no 0.")
-
-    return "\n".join(lines)
-
-
 SYSTEM_PROMPT_TEMPLATE = """Sos el Asistente de IA de MASTER, un estudio de mastering de audio online \
 (similar en espíritu al asistente de IA de LANDR). Hablás en español rioplatense, con tono \
 cercano, profesional y directo, como un ingeniero de mastering con experiencia que está \
@@ -466,15 +276,6 @@ Cuándo NO proponer parámetros (dejar todo en null):
 - No hay análisis disponible todavía.
 - El usuario está charlando, agradeciendo, o pidiendo una aclaración sin pedir un ajuste.
 
-REGLA CRÍTICA — Basá tus propuestas en el análisis real del track:
-- NUNCA inventes valores genéricos. Cada parámetro que propongas debe estar justificado por \
-un dato concreto del análisis (LUFS, crest factor, balance espectral, stereo correlation, etc.).
-- Si no hay análisis disponible, NO propongas parámetros — pedile al usuario que analice el track primero.
-- Si el análisis muestra que algo está bien, no lo cambies. Solo proponé cambios donde el análisis \
-indique un problema real (ej: spectral_flatness bajo → resonancia; lufs < -20 → necesita loudness; \
-stereo_correlation < 0.3 → problema de fase; true_peak > -0.3 → riesgo de clipping).
-- CITA el número del análisis que justifica cada cambio en tu respuesta.
-
 Reglas para las propuestas:
 - Cambiá SOLO los parámetros relevantes al pedido puntual (normalmente 1 a 6 campos), NUNCA \
 completes todos los campos del esquema como si fuera un mastering completo desde cero.
@@ -484,8 +285,6 @@ hacia abajo), igual que cualquier otro parámetro en dB de esta lista. No hay ni
 en escala lineal 0-1 en este esquema — todo lo que es amplitud/nivel se expresa en dB.
 - Los valores deben estar dentro de los rangos válidos (ver más abajo) y ser coherentes con el \
 análisis real del track, no genéricos.
-- Los cambios que propongas deben ser RELATIVOS a los parámetros actuales del usuario (ver la \
-sección "PARÁMETROS ACTUALES" más abajo). No los reemplaces desde cero — ajustá lo que ya tiene.
 - Si proponés parámetros, completá también "suggestion_summary" con una frase muy corta (5-9 \
 palabras) que resuma el cambio, ej: "Más aire arriba de 8kHz" o "Bajar 2dB el makeup del compresor".
 - En "reply" explicá en 1-3 oraciones qué le vas a cambiar y por qué, en tono conversacional \
@@ -505,16 +304,13 @@ mezcla, mastering y el uso de la herramienta.
 Rangos válidos de los parámetros de la cadena (para cuando propongas cambios):
 {ranges_block}
 
-{current_params_block}
-
 {audio_context}
 """
 
 
 async def chat(user_message: str, history: Optional[list] = None,
                analysis: Optional[dict] = None, preset: Optional[str] = None,
-               platform: Optional[str] = None,
-               current_params: Optional[dict] = None) -> dict:
+               platform: Optional[str] = None) -> dict:
     """Envía un mensaje al asistente de IA y devuelve un dict:
     {"reply": str, "suggested_params": dict, "suggestion_summary": Optional[str]}
 
@@ -527,13 +323,11 @@ async def chat(user_message: str, history: Optional[list] = None,
     """
     client = _get_client()
     if client is None:
+        fallback = build_fallback_response(user_message, analysis)
         return {
-            "reply": f"La IA no está disponible en este momento ({get_unavailable_reason()}). "
-                     "No se pueden sugerir parámetros sin el modelo de IA. "
-                     "Verificá la configuración de la API key e intentá de nuevo.",
-            "suggested_params": {},
-            "suggestion_summary": None,
-            "suggestion_explanation": None,
+            "reply": fallback["reply"],
+            "suggested_params": fallback["suggested_params"],
+            "suggestion_summary": fallback["suggestion_summary"],
         }
 
     if not user_message or not user_message.strip():
@@ -557,7 +351,6 @@ async def chat(user_message: str, history: Optional[list] = None,
     )
     system_prompt = SYSTEM_PROMPT_TEMPLATE.format(
         ranges_block=ranges_block,
-        current_params_block=build_current_params_context(current_params),
         audio_context=build_audio_context(analysis, preset, platform),
     ) + "\n\n" + json_fields_hint
 
@@ -583,13 +376,12 @@ async def chat(user_message: str, history: Optional[list] = None,
         logger.warning("Respuesta de chat de Gemini no fue JSON parseable.")
 
     if not data:
+        fallback = build_fallback_response(user_message, analysis)
         return {
-            "reply": "No se pudo obtener una respuesta válida del modelo de IA. "
-                     "No se inventan parámetros sin una respuesta concreta. "
-                     "Probá reformular tu mensaje o intentá de nuevo.",
-            "suggested_params": {},
-            "suggestion_summary": None,
-            "suggestion_explanation": None,
+            "reply": fallback["reply"],
+            "suggested_params": fallback["suggested_params"],
+            "suggestion_summary": fallback["suggestion_summary"],
+            "suggestion_explanation": fallback.get("suggestion_explanation"),
         }
 
     reply_text = str(data.get("reply") or "").strip() or (
@@ -627,144 +419,6 @@ async def chat(user_message: str, history: Optional[list] = None,
         "suggested_params": suggested,
         "suggestion_summary": (str(data.get("suggestion_summary") or "").strip() or None),
         "suggestion_explanation": (str(data.get("reasoning") or "").strip() or None),
-    }
-
-
-# ═══════════════════════════════════════════════════════════════════════════
-# ── Prompt-to-Master: NL → cadena completa de DSP params ───────────────────
-# ═══════════════════════════════════════════════════════════════════════════
-
-PROMPT_MASTER_SYSTEM = """Sos el motor de Prompt-to-Master de MASTER, un estudio de mastering de audio online. \
-El usuario te describe en lenguaje natural cómo quiere que suene su master y vos devolvés la cadena \
-completa de parámetros DSP para lograrlo.
-
-REGLA CRÍTICA — Basá TODA la cadena en el análisis técnico real del track:
-- Cada parámetro que propongas debe estar justificado por un dato concreto del análisis \
-(LUFS, crest factor, balance espectral, stereo correlation, dynamic range, resonancias, etc.).
-- NUNCA uses valores genéricos o presets fijos. Ajustá cada parámetro al track específico.
-- Si no hay análisis disponible, NO propongas parámetros — devolvé un error indicando que \
-se necesita analizar el track primero.
-- CITA los números del análisis que justifican tus decisiones en el campo "reasoning".
-
-También tenés los PARÁMETROS ACTUALES del usuario como referencia. Usalos como punto de partida:
-no empieces desde cero, ajustá lo que ya tiene seteado según el pedido del usuario.
-
-Instrucciones del usuario:
-"{user_message}"
-
-Devolvé SOLO un objeto JSON plano con:
-- "reply": string — explicación corta (2-4 oraciones) de qué vas a hacer y por qué, citando el análisis.
-- "reasoning": string — justificación técnica detallada de cada decisión, citando números del análisis.
-- "suggestion_summary": string — frase corta (5-9 palabras) que resume el master.
-- Todos los parámetros numéricos de la cadena (como float): {float_field_names}
-- Booleanos (true/false): {bool_field_names}
-- Enums: {enum_fields_hint}
-
-Rangos válidos:
-{ranges_block}
-
-{current_params_block}
-
-{audio_context}
-"""
-
-
-async def prompt_master(user_message: str,
-                        analysis: Optional[dict] = None,
-                        current_params: Optional[dict] = None,
-                        preset: Optional[str] = None,
-                        platform: Optional[str] = None) -> dict:
-    """Convierte una instrucción en lenguaje natural a la cadena completa de mastering.
-
-    A diferencia de chat() (que propone 1-6 tweaks), esto devuelve TODOS los ~90 parámetros.
-    """
-    if not analysis:
-        return {
-            "reply": "No hay análisis disponible. Analizá el track primero antes de pedir un master completo.",
-            "params": {},
-            "reasoning": None,
-            "suggestion_summary": None,
-        }
-
-    client = _get_client()
-    if client is None:
-        return {
-            "reply": f"La IA no está disponible ({get_unavailable_reason()}). No se puede generar el master sin el modelo.",
-            "params": {},
-            "reasoning": None,
-            "suggestion_summary": None,
-        }
-
-    if not user_message or not user_message.strip():
-        user_message = "Masterizá este track según el análisis, optimizando loudness, dinámica y balance espectral para la plataforma elegida."
-
-    ranges_block = _param_ranges_text()
-    float_field_names = [k for k in PARAM_RANGES if k not in DB_EXPOSED_FIELDS]
-    float_field_names += [_db_field_name(k) for k in DB_EXPOSED_FIELDS]
-    enum_fields_hint = "\n".join(
-        f'- "{field}": uno de {", ".join(repr(v) for v in values)}.'
-        for field, values in STRING_ENUM_FIELDS.items()
-    )
-
-    system_prompt = PROMPT_MASTER_SYSTEM.format(
-        user_message=user_message.strip(),
-        float_field_names=", ".join(float_field_names),
-        bool_field_names=", ".join(BOOL_PARAM_FIELDS),
-        enum_fields_hint=enum_fields_hint,
-        ranges_block=ranges_block,
-        current_params_block=build_current_params_context(current_params),
-        audio_context=build_audio_context(analysis, preset, platform),
-    )
-
-    contents = [{"role": "user", "parts": [{"text": user_message.strip()}]}]
-
-    raw = await _gemini_generate_content(
-        system_prompt, contents, max_output_tokens=8192,
-        thinking_budget=-1, temperature=0.3,
-    )
-    data = _extract_json_object(raw) if raw else None
-    if data is None and raw is not None:
-        logger.warning("Prompt-to-Master: respuesta no fue JSON parseable.")
-
-    if not data:
-        return {
-            "reply": "No se pudo obtener una respuesta válida del modelo. Intentá de nuevo.",
-            "params": {},
-            "reasoning": None,
-            "suggestion_summary": None,
-        }
-
-    params: dict = {}
-    for key, (lo, hi) in PARAM_RANGES.items():
-        if key in DB_EXPOSED_FIELDS:
-            continue
-        v = data.get(key)
-        if v is None:
-            continue
-        try:
-            clamped = _clamp(float(v), lo, hi)
-        except (TypeError, ValueError):
-            continue
-        if clamped is not None:
-            params[key] = round(clamped, 3)
-    for key in DB_EXPOSED_FIELDS:
-        linear_val = _resolve_db_exposed_param(key, data, default_linear=None)
-        if linear_val is not None:
-            params[key] = round(linear_val, 4)
-    for key in BOOL_PARAM_FIELDS:
-        v = data.get(key)
-        if v is not None:
-            params[key] = bool(v)
-    for field, valid_values in STRING_ENUM_FIELDS.items():
-        v = data.get(field)
-        if v in valid_values:
-            params[field] = v
-
-    return {
-        "reply": str(data.get("reply") or "").strip(),
-        "params": params,
-        "reasoning": str(data.get("reasoning") or "").strip() or None,
-        "suggestion_summary": str(data.get("suggestion_summary") or "").strip() or None,
     }
 
 
@@ -1311,6 +965,434 @@ def _clamp(value, lo, hi):
     return max(lo, min(hi, value))
 
 
+def _parse_instruction_params(user_message: str) -> dict:
+    """Traduce instrucciones en lenguaje natural a parámetros de la cadena DSP.
+
+    Ejemplos soportados:
+    - 'dame 2 db menos en 4k q 1.2' -> EQ banda 3 con gain -2 dB, freq 4k, Q 1.2
+    - 'subí 1.5 dB el aire' -> high_shelf_gain_db +1.5
+    - 'más compresión' -> comp_ratio/comp_threshold más agresivos
+    - 'más reverb' -> reverb_wet +0.04
+    """
+    message = (user_message or "").strip().lower()
+    if not message:
+        return {}
+
+    params: dict = {}
+    summary = None
+    reply = None
+
+    def add_param(key, value):
+        if value is None:
+            return
+        if isinstance(value, bool):
+            params[key] = value
+        elif isinstance(value, str):
+            params[key] = value
+        else:
+            params[key] = round(float(value), 4)
+
+    # --- Gain / level parsing ---
+    gain_match = re.search(r'([+-]?\d+(?:[.,]\d+)?)\s*(?:db|dB|decibeles|decibel)', message)
+    gain_db = None
+    if gain_match:
+        gain_db = float(gain_match.group(1).replace(",", "."))
+        if re.search(r'\b(menos|bajar|bajá|bajale|restar|cut|down)\b', message):
+            gain_db = -abs(gain_db)
+        elif re.search(r'\b(subir|subi|subile|aumentar|agregar|boost|up|más)\b', message):
+            gain_db = abs(gain_db)
+
+    # --- Frequency parsing ---
+    freq_hz = None
+    freq_match = re.search(r'(\d+(?:[.,]\d+)?)\s*(k|khz|hz)', message)
+    if freq_match:
+        val = float(freq_match.group(1).replace(",", "."))
+        unit = freq_match.group(2).lower()
+        if unit in {"k", "khz"}:
+            freq_hz = val * 1000.0
+        else:
+            freq_hz = val
+
+    # --- Q parsing ---
+    q_value = None
+    q_match = re.search(r'(?:q|q=|q:|q\s*)(\d+(?:[.,]\d+)?)', message)
+    if q_match:
+        q_value = float(q_match.group(1).replace(",", "."))
+
+    # --- EQ instruction: 'en 4k', 'en 8k', '2 db menos en 4k q 1.2' ---
+    if gain_db is not None and ("eq" in message or freq_hz is not None or "4k" in message or "8k" in message or "khz" in message):
+        if freq_hz is None and gain_db is not None:
+            freq_hz = 4000.0 if "4k" in message or "4 khz" in message else 8000.0 if "8k" in message or "8 khz" in message else None
+        if freq_hz is not None:
+            if freq_hz <= 180.0:
+                band_key = "eq1"
+            elif freq_hz <= 1000.0:
+                band_key = "eq2"
+            elif freq_hz <= 3000.0:
+                band_key = "eq3"
+            else:
+                band_key = "eq4"
+            add_param(f"{band_key}_freq", freq_hz)
+            add_param(f"{band_key}_gain", gain_db)
+            if q_value is not None:
+                add_param(f"{band_key}_q", q_value)
+            summary = "Ajuste de EQ paramétrico"
+            reply = f"Ajusté la banda de EQ en {int(freq_hz/1000)} kHz con {gain_db:+.1f} dB."
+
+    # --- Shelf / air / brilliance ---
+    if gain_db is not None and ("aire" in message or "brillo" in message or "agudos" in message or "high shelf" in message):
+        add_param("high_shelf_gain_db", gain_db)
+        if summary is None:
+            summary = "Ajuste de aire en agudos"
+            reply = f"Subí el shelf de agudos en {gain_db:+.1f} dB."
+
+    # --- Compression controls ---
+    if "compres" in message or "compress" in message or "compression" in message:
+        if gain_db is not None and ("threshold" in message or "umbral" in message or "thresh" in message):
+            add_param("comp_threshold", _db_to_linear(gain_db))
+            summary = summary or "Ajuste de compresión"
+            reply = reply or f"Cambié el threshold del compresor a {gain_db:+.1f} dB."
+        elif "ratio" in message or "ratio" in message:
+            ratio_match = re.search(r'(\d+(?:[.,]\d+)?)\s*(?:x|:1|ratio)', message)
+            if ratio_match:
+                add_param("comp_ratio", float(ratio_match.group(1).replace(",", ".")))
+                summary = summary or "Ajuste de ratio"
+        elif "attack" in message or "ataque" in message:
+            ms_match = re.search(r'(\d+(?:[.,]\d+)?)\s*(ms|miliseg)', message)
+            if ms_match:
+                add_param("comp_attack_ms", float(ms_match.group(1).replace(",", ".")))
+        elif "release" in message or "release" in message or "soltar" in message:
+            ms_match = re.search(r'(\d+(?:[.,]\d+)?)\s*(ms|miliseg)', message)
+            if ms_match:
+                add_param("comp_release_ms", float(ms_match.group(1).replace(",", ".")))
+
+    # --- Saturation ---
+    if "satur" in message or "drive" in message:
+        if gain_db is not None:
+            add_param("saturation_drive", max(0.0, min(1.0, abs(gain_db) / 12.0)))
+            summary = summary or "Ajuste de saturación"
+
+    # --- Stereo / width ---
+    if "ancho" in message or "estéreo" in message or "width" in message:
+        width_match = re.search(r'(\d+(?:[.,]\d+)?)\s*(x|times)', message)
+        if width_match:
+            add_param("stereo_width_amount", float(width_match.group(1).replace(",", ".")))
+        elif gain_db is not None:
+            add_param("stereo_width_amount", max(0.0, min(3.0, 1.0 + gain_db / 6.0)))
+
+    # --- Reverb ---
+    if "reverb" in message or "verb" in message:
+        if gain_db is not None:
+            add_param("reverb_wet", max(0.0, min(1.0, abs(gain_db) / 12.0)))
+        else:
+            add_param("reverb_wet", 0.08)
+
+    # --- Limiter / ceiling / loudness ---
+    if "limiter" in message or "techo" in message or "pico" in message:
+        if gain_db is not None:
+            add_param("limiter_ceiling", _db_to_linear(gain_db))
+            summary = summary or "Ajuste de limiter"
+    if "loud" in message or "lufs" in message or "fuerte" in message or "más fuerte" in message:
+        if gain_db is not None:
+            add_param("comp_makeup_db", gain_db)
+            summary = summary or "Ajuste de loudness"
+
+    # --- Parámetros avanzados / modos de cadena ---
+    if "linear phase" in message or "phase linear" in message or "linear_phase" in message:
+        add_param("eq_mode", "linear_phase")
+    if "iir" in message:
+        add_param("eq_mode", "iir")
+    if "glue" in message and ("bypass" in message or "desactiv" in message or "apag" in message):
+        add_param("glue_bypass", True)
+    if "glue" in message and ("activar" in message or "encend" in message or "on" in message):
+        add_param("glue_bypass", False)
+    if "multibanda" in message and ("bypass" in message or "desactiv" in message or "apag" in message):
+        add_param("mb_bypass", True)
+    if "multibanda" in message and ("activar" in message or "encend" in message or "on" in message):
+        add_param("mb_bypass", False)
+    if "estéreo" in message and ("enhancer" in message or "estereo enhancer" in message):
+        add_param("use_stereo_enhancer", True)
+    if "enhancer" in message and ("bypass" in message or "desactiv" in message or "apag" in message):
+        add_param("use_stereo_enhancer", False)
+    if "link" in message and "stereo" in message and ("activar" in message or "on" in message):
+        add_param("comp_stereo_link", True)
+    if "link" in message and "stereo" in message and ("desactiv" in message or "apag" in message):
+        add_param("comp_stereo_link", False)
+    if "oversample" in message or "oversampling" in message:
+        if "bajo" in message or "draft" in message or "fast" in message or "rapido" in message:
+            add_param("oversample_mode", "fast")
+        elif "alta" in message or "quality" in message or "calidad" in message or "ultra" in message:
+            add_param("oversample_mode", "quality")
+        else:
+            add_param("oversample_mode", "quality")
+
+    return params if params else {}
+
+
+def build_fallback_response(user_message: str, analysis: Optional[dict]) -> dict:
+    """Respuesta de respaldo útil cuando la IA externa no está disponible o no
+    devuelve cambios accionables. Genera sugerencias simples pero realistas basadas
+    en el análisis y en palabras claves del mensaje del usuario."""
+    message = (user_message or "").strip().lower()
+    parsed_params = _parse_instruction_params(user_message)
+    if parsed_params:
+        reply = f"Aplicaré ese ajuste directamente en la cadena DSP: {', '.join(parsed_params.keys())}."
+        return {
+            "reply": reply,
+            "suggested_params": parsed_params,
+            "suggestion_summary": "Ajuste DSP guiado por texto",
+            "suggestion_explanation": reply,
+        }
+
+    a = analysis or {}
+    spectrum = a.get("spectrum") or {}
+    advice = a.get("mix_advice") or {}
+    issues = [str(i).lower() for i in (advice.get("issues") or [])]
+    tips = [str(t).lower() for t in (advice.get("tips") or [])]
+    lufs = a.get("lufs")
+    peak = a.get("peak_db")
+    true_peak = a.get("true_peak_db")
+
+    suggested: dict = {}
+    summary = None
+    reply = "Te propongo un ajuste conservador según el análisis del track."
+
+    def pick(value, key):
+        if value is None:
+            return
+        suggested[key] = round(float(value), 3)
+
+    wants_brighter = any(k in message for k in ["brillo", "aire", "agudos", "bright", "shine", "más brillo"])
+    wants_louder = any(k in message for k in ["más fuerte", "louder", "subilo", "subir", "loudness", "más loud"])
+    wants_less_comp = any(k in message for k in ["menos comp", "menos compresión", "suave", "más natural", "relajá"])
+    wants_more_warmth = any(k in message for k in ["calido", "warm", "grave", "graves", "bajo"])
+    wants_less_clipping = any(k in message for k in ["clipping", "pico", "techo", "limitar", "limiter"])
+
+    if wants_brighter or any("altas frecuencias muy bajas" in i for i in issues) or any("high shelf" in t for t in tips):
+        boost = 2.0 if (spectrum.get("air") is not None and float(spectrum.get("air", -999)) < -24) else 1.5
+        pick(boost, "high_shelf_gain_db")
+        pick(min(2.0, max(0.8, boost - 0.4)), "eq4_gain")
+        summary = "Más aire y brillo en agudos"
+        reply = "Voy a sumar un poco de aire en los agudos para que el track se vea más abierto y brillante."
+
+    if wants_louder or (isinstance(lufs, (int, float)) and lufs < -18):
+        if isinstance(lufs, (int, float)) and lufs < -20:
+            pick(-12.0, "target_lufs")
+            pick(1.5, "comp_makeup_db")
+            summary = summary or "Subir loudness con más control"
+            reply = "El track está bastante abajo en loudness, así que priorizo un lift de nivel con compresión y limiter más controlados."
+        else:
+            pick(-14.0, "target_lufs")
+            pick(0.8, "comp_makeup_db")
+            summary = summary or "Subir loudness sin perder cuerpo"
+            reply = "Voy a empujar un poco el nivel general para que quede más presente sin perder demasiada dinámica."
+
+    if wants_less_comp or any("muy comprimido" in i or "muy comprimido" in t for i, t in zip(issues, tips)):
+        pick(0.65, "comp_threshold")
+        pick(2.0, "comp_ratio")
+        summary = summary or "Compresión más natural"
+        reply = "Voy a aflojar un poco la compresión para que el track se sienta menos aplastado."
+
+    if wants_more_warmth or (spectrum.get("bass") is not None and float(spectrum.get("bass", -999)) < -18):
+        pick(45.0, "hp_cutoff")
+        pick(1.2, "eq1_gain")
+        summary = summary or "Más cuerpo en bajos"
+        reply = "Voy a reforzar la zona de bajos y limpiar un poco el extremo grave para que suene más sólido."
+
+    if wants_less_clipping or ((isinstance(true_peak, (int, float)) and true_peak > -0.5) or (isinstance(peak, (int, float)) and peak > -0.5)):
+        pick(0.94, "limiter_ceiling")
+        pick(50.0, "limiter_release_ms")
+        summary = summary or "Más margen de pico"
+        reply = "Voy a bajar un poco el techo del limiter para reducir riesgo de clipping y proteger la salida."
+
+    if not suggested:
+        if isinstance(lufs, (int, float)) and lufs < -18:
+            pick(-14.0, "target_lufs")
+            pick(0.8, "comp_makeup_db")
+            summary = "Subir loudness con más control"
+        elif any("pico" in i for i in issues):
+            pick(0.94, "limiter_ceiling")
+            summary = "Reducir riesgo de clipping"
+        elif any("muy bajo" in i for i in issues):
+            pick(1.0, "high_shelf_gain_db")
+            summary = "Aumentar claridad general"
+
+    return {
+        "reply": reply,
+        "suggested_params": suggested,
+        "suggestion_summary": summary,
+        "suggestion_explanation": reply,
+    }
+
+
+def _fallback_custom_params(analysis: Optional[dict]) -> dict:
+    """Heurística de respaldo (sin IA): parte de valores neutros y los ajusta \
+    a mano según el análisis real del track, con el mismo criterio que aplicaría \
+    un ingeniero de mastering — no un preset fijo ni un par de umbrales binarios:
+
+    - Compresor de banda ancha y limiter: interpolación continua sobre el rango \
+    dinámico global (no solo dos casos "muy comprimido"/"muy dinámico").
+    - Compresor MULTIBANDA: reacciona al crest factor de CADA banda por separado \
+    (antes esto quedaba siempre en el valor neutro, sin importar el análisis).
+    - Ancho estéreo: se ajusta según la correlación L/R que YA tiene el track, \
+    en vez de aplicar siempre el mismo 1.05 sin mirar nada.
+    - Sub-bass mono: activado con una cantidad proporcional a qué tan \
+    descorrelacionados están los graves (band_stereo_correlation.low) — \
+    práctica estándar de mastering para compatibilidad mono/club/vinilo.
+    - Glue compressor: activado MUY suave sólo si el track todavía tiene \
+    margen dinámico real (si ya viene comprimido, se deja bypasseado para \
+    no sobre-procesar).
+    - Clipper: activado con drive mínimo sólo si el track ya viene "caliente" \
+    (true peak alto o clipping real detectado), para aliviarle trabajo al \
+    limiter sin agregarlo a un master que no lo necesita.
+    - De-esser y corrección de resonancias: NO son una estimación a ojo — se \
+    reusa `recommend_dynamic_eq()` de mastering.py, que corre detección real \
+    de picos espectrales anómalos (resonancias) y de sibilancia sobre las \
+    métricas que analyze_audio ya calculó (`analysis["resonances"]`/\
+    `["sibilance"]`), y sólo se activan si hay algo puntual que corregir.
+    """
+    p = dict(_NEUTRAL_PARAMS)
+    a = analysis or {}
+
+    def f(key):
+        v = a.get(key)
+        return float(v) if isinstance(v, (int, float)) else None
+
+    def clamp_key(key, value):
+        lo, hi = PARAM_RANGES[key]
+        return round(float(min(max(value, lo), hi)), 3)
+
+    lufs = f("lufs")
+    plr = f("plr_db")
+    dyn = f("dynamic_range_db")
+    true_peak = f("true_peak_db")
+    clipping_ratio = f("clipping_ratio") or 0.0
+    stereo_corr = f("stereo_correlation")
+    band_dyn = a.get("band_dynamics_db") or {}
+    band_corr = a.get("band_stereo_correlation") or {}
+    spectrum = a.get("spectrum") or {}
+
+    def lerp_t(value, lo, hi):
+        """0.0 en value<=lo, 1.0 en value>=hi, interpolación lineal entre medio."""
+        if value is None:
+            return 0.5  # sin dato -> punto medio, no un extremo arbitrario
+        return max(0.0, min(1.0, (value - lo) / (hi - lo)))
+
+    # ── Dinámica global: compresor de banda ancha + limiter ──────────────────
+    # t=0 en dyn<=6 (ya muy comprimido -> tocar lo mínimo posible), t=1 en
+    # dyn>=18 (muy dinámico -> puede tolerar más ratio/threshold más bajo).
+    # Interpolación continua: dyn=12 da un resultado intermedio real, no un
+    # salto binario entre dos presets fijos.
+    t = lerp_t(dyn, 6.0, 18.0)
+    p["comp_ratio"] = clamp_key("comp_ratio", 1.6 + t * (3.1 - 1.6))
+    p["comp_threshold"] = clamp_key("comp_threshold", 0.72 - t * (0.72 - 0.42))
+    p["limiter_release_ms"] = clamp_key("limiter_release_ms", 85.0 - t * (85.0 - 35.0))
+
+    # ── Dinámica POR BANDA: compresor multibanda ──────────────────────────────
+    # Antes esto NUNCA se tocaba acá (siempre quedaba en el valor neutro). Cada
+    # banda reacciona a SU propio crest factor — un track con graves ya
+    # apretados pero agudos sueltos (muy común) recibe tratamiento distinto
+    # por banda, en vez de una única decisión global aplicada a las tres.
+    def band_comp(band_key, base_threshold, base_ratio):
+        dv = band_dyn.get(band_key)
+        dv = float(dv) if isinstance(dv, (int, float)) else None
+        bt = lerp_t(dv, 5.0, 15.0)
+        thr = clamp_key(f"mb_{band_key}_threshold", base_threshold + 0.12 - bt * 0.24)
+        ratio = clamp_key(f"mb_{band_key}_ratio", base_ratio - 0.4 + bt * 1.4)
+        return thr, ratio
+
+    p["mb_low_threshold"], p["mb_low_ratio"] = band_comp("low", 0.60, 2.0)
+    p["mb_mid_threshold"], p["mb_mid_ratio"] = band_comp("mid", 0.62, 1.8)
+    p["mb_high_threshold"], p["mb_high_ratio"] = band_comp("high", 0.65, 1.6)
+
+    # ── Loudness/headroom: makeup y ceiling del limiter ───────────────────────
+    # PLR (true peak - LUFS) es mejor indicador de headroom real que el LUFS
+    # solo: un track a -14 LUFS con PLR alto todavía tiene margen; el mismo
+    # LUFS con PLR bajo ya está "caliente" y conviene ser conservador.
+    if lufs is not None:
+        if lufs < -20:
+            p["comp_makeup_db"] = clamp_key("comp_makeup_db", 2.5)
+            p["limiter_ceiling"] = clamp_key("limiter_ceiling", 0.97)
+        elif lufs > -9:
+            p["comp_makeup_db"] = clamp_key("comp_makeup_db", 0.0)
+            p["limiter_ceiling"] = clamp_key("limiter_ceiling", 0.95)
+    if plr is not None and plr < 8.0:
+        # Poco margen real entre pico y loudness -> ya está bastante limitado,
+        # ser más conservador con el techo pase lo que diga el LUFS solo.
+        p["limiter_ceiling"] = clamp_key("limiter_ceiling", min(p["limiter_ceiling"], 0.95))
+
+    # ── Balance espectral: EQ estática ────────────────────────────────────────
+    def band(key):
+        v = spectrum.get(key)
+        return v if isinstance(v, (int, float)) else None
+
+    sub = band("sub_bass"); bass = band("bass"); air = band("air"); presence = band("presence")
+    if sub is not None and sub > -6:
+        p["hp_cutoff"] = 45.0
+    if bass is not None and bass < -18:
+        p["eq1_gain"] = 2.0
+    if presence is not None and presence < -20:
+        p["eq3_gain"] = 1.5
+    if air is not None and air < -24:
+        p["high_shelf_gain_db"] = 3.0
+        p["eq4_gain"] = 1.5
+
+    # ── Ancho estéreo: parte de lo que el track YA tiene, no de un fijo ───────
+    if stereo_corr is not None:
+        if stereo_corr < 0.3:
+            # Ya muy ancho/con riesgo de fase -> no ensanchar más.
+            p["stereo_width_amount"] = clamp_key("stereo_width_amount", 1.0)
+        elif stereo_corr > 0.9:
+            # Casi mono -> un ensanche leve es seguro y suele sumar.
+            p["stereo_width_amount"] = clamp_key("stereo_width_amount", 1.15)
+
+    # ── Sub-bass mono (NUEVO): activado según qué tan centrados están los ────
+    # graves. Es una corrección estándar de mastering (compatibilidad mono en
+    # sistemas de club/vinilo/PA), no algo exótico — la cantidad escala con
+    # band_stereo_correlation.low en vez de ser todo-o-nada.
+    low_corr = band_corr.get("low")
+    low_corr = float(low_corr) if isinstance(low_corr, (int, float)) else None
+    if low_corr is not None and low_corr < 0.85:
+        severity = lerp_t(low_corr, 0.3, 0.85)  # 1.0 = grave muy descorrelacionado
+        p["low_end_mono_freq"] = 120.0
+        p["low_end_mono_amount"] = clamp_key("low_end_mono_amount", 0.4 + (1.0 - severity) * 0.5)
+
+    # ── Glue compressor (NUEVO): sólo si hay margen dinámico real para ────────
+    # "pegar" el mix sin sobre-comprimir un track que ya viene apretado.
+    if dyn is not None and dyn >= 9.0:
+        p["glue_bypass"] = False
+        p["glue_threshold_db"] = -14.0
+        p["glue_ratio"] = 1.8
+        p["glue_attack_ms"] = 30.0
+        p["glue_release_ms"] = 130.0
+        p["glue_makeup_db"] = 0.3
+
+    # ── Clipper (NUEVO): sólo si el track ya viene caliente (true peak alto o ─
+    # clipping real detectado) — ahí un clip suave previo al limiter reduce el
+    # trabajo/pumping del limiter. En un track con headroom normal, no aporta
+    # nada y sólo agregaría distorsión innecesaria.
+    if (true_peak is not None and true_peak > -1.0) or clipping_ratio > 0.001:
+        p["clipper_bypass"] = False
+        p["clipper_mode"] = "soft"
+        p["clipper_ceiling"] = 0.97
+        p["clipper_drive_db"] = 1.5
+
+    # ── De-esser y corrección de resonancias (NUEVO): detección real, no ──────
+    # a ojo. analyze_audio() ya corrió detect_resonances()/detect_sibilance();
+    # acá se reusan esos resultados (sin volver a tocar audio/sr) para armar
+    # los mismos parámetros reso_*/dyneq_* que usaría el flujo manual.
+    try:
+        from mastering import recommend_dynamic_eq
+        dyneq_reco = recommend_dynamic_eq(
+            None, None, resonances=a.get("resonances"), sibilance=a.get("sibilance"),
+        )
+        p.update(dyneq_reco.get("recommended_params") or {})
+    except Exception as e:
+        logger.warning(f"Heurística de respaldo: no se pudo aplicar recommend_dynamic_eq: {e}")
+
+    return p
+
+
 def _resolve_target_lufs(result: dict) -> Optional[float]:
     """Determina el LUFS objetivo de la Fase 4 (Optimización): el de la plataforma \
     elegida si hay una, si no el target_lufs que la propia IA/heurística calculó."""
@@ -1517,11 +1599,16 @@ async def decide_mastering(analysis: Optional[dict], platform_options: list,
 
     client = _get_client()
     if client is None:
-        raise RuntimeError(
-            f"La IA no está disponible ({get_unavailable_reason()}). "
-            "No se puede realizar auto-mastering sin el modelo de IA. "
-            "No se usan heurísticas ni parámetros preestablecidos."
-        )
+        logger.warning(f"Auto-mastering sin IA disponible ({get_unavailable_reason()}), usando heurística.")
+        params = _fallback_custom_params(analysis)
+        result = {
+            **params, "platform": (platform_options[0] if platform_options else None),
+            "reasoning": (
+                "No se pudo consultar a la IA, así que se calcularon los parámetros con una "
+                "heurística de respaldo en base al rango dinámico, loudness y balance espectral del track."
+            ),
+        }
+        return _apply_optimization(result, audio, sr, pre_analysis=analysis)
 
     float_field_names = [k for k in PARAM_RANGES if k not in DB_EXPOSED_FIELDS]
     float_field_names += [_db_field_name(k) for k in DB_EXPOSED_FIELDS]
@@ -1585,11 +1672,15 @@ async def decide_mastering(analysis: Optional[dict], platform_options: list,
         logger.error(f"No se pudo obtener/parsear la decisión de mastering de la IA: {e}")
 
     if not data:
-        raise RuntimeError(
-            "La IA no devolvió una respuesta válida para auto-mastering. "
-            "No se usan heurísticas ni parámetros preestablecidos. "
-            "Intentá de nuevo."
-        )
+        params = _fallback_custom_params(analysis)
+        result = {
+            **params, "platform": (platform_options[0] if platform_options else None),
+            "reasoning": (
+                "La IA no devolvió una respuesta válida, así que se calcularon los parámetros "
+                "con una heurística de respaldo en base al análisis del track."
+            ),
+        }
+        return _apply_optimization(result, audio, sr, pre_analysis=analysis)
 
     result = {}
     for key, (lo, hi) in PARAM_RANGES.items():
@@ -1750,11 +1841,8 @@ async def decide_mix(stems_analysis: dict) -> dict:
     client = _get_client()
 
     if client is None:
-        raise RuntimeError(
-            f"La IA no está disponible ({get_unavailable_reason()}). "
-            "No se pueden sugerir parámetros de mezcla sin el modelo de IA. "
-            "No se usan heurísticas ni parámetros preestablecidos."
-        )
+        logger.warning("decide_mix sin IA disponible, usando heurística.")
+        return _fallback_mix_params(stems_analysis)
 
     try:
         result = await _gemini_generate_content(
@@ -1769,10 +1857,7 @@ async def decide_mix(stems_analysis: dict) -> dict:
         return _validate_mix_params(parsed, stems_analysis)
     except Exception as e:
         logger.error(f"decide_mix error: {e}")
-        raise RuntimeError(
-            f"La IA no pudo sugerir parámetros de mezcla: {e}. "
-            "No se usan heurísticas ni parámetros preestablecidos."
-        )
+        return _fallback_mix_params(stems_analysis)
 
 
 def _validate_mix_params(params: dict, stems_analysis: dict) -> dict:
@@ -1825,3 +1910,83 @@ def _validate_mix_params(params: dict, stems_analysis: dict) -> dict:
         validated[stem_name] = clean
 
     return validated
+
+
+def _fallback_mix_params(stems_analysis: dict) -> dict:
+    """Heurística de respaldo cuando la IA no está disponible."""
+    import math
+
+    results = {}
+    stem_names = list(stems_analysis.keys())
+
+    # Detectar kick para sidechain del bass
+    kick_name = next(
+        (n for n in stem_names if stems_analysis[n].get("stem_type") == "kick"),
+        None
+    )
+
+    for name, analysis in stems_analysis.items():
+        stem_type = analysis.get("stem_type", "other")
+        lufs = analysis.get("lufs") or -20.0
+        peak = analysis.get("peak_db") or -6.0
+        channels = analysis.get("channels", 2)
+
+        # Ganancia base — normalizar hacia -18 LUFS
+        target_lufs = -18.0
+        gain_db = float(max(-12.0, min(6.0, target_lufs - lufs)))
+
+        params = {
+            "gain_db": round(gain_db, 1),
+            "pan": 0.0,
+            "hp_cutoff_hz": 20.0,
+            "lp_cutoff_hz": 20000.0,
+            "eq_low_gain_db": 0.0,
+            "eq_lomid_gain_db": 0.0,
+            "eq_himid_gain_db": 0.0,
+            "eq_high_gain_db": 0.0,
+            "comp_enabled": False,
+            "comp_threshold": 0.5,
+            "comp_ratio": 4.0,
+            "comp_attack_ms": 10.0,
+            "comp_release_ms": 100.0,
+            "comp_makeup_db": 0.0,
+            "transient_attack": 0.0,
+            "transient_sustain": 0.0,
+            "stereo_width_amount": 1.0 if channels == 2 else 0.0,
+            "sidechain_trigger_name": None,
+            "reasoning": "Parámetros calculados por heurística (IA no disponible).",
+        }
+
+        if stem_type == "kick":
+            params.update({"hp_cutoff_hz": 30.0, "comp_enabled": True,
+                           "comp_ratio": 5.0, "comp_attack_ms": 5.0,
+                           "comp_release_ms": 60.0, "transient_attack": 0.4})
+        elif stem_type == "snare":
+            params.update({"hp_cutoff_hz": 80.0, "comp_enabled": True,
+                           "comp_ratio": 4.0, "transient_attack": 0.3,
+                           "eq_himid_gain_db": 1.5})
+        elif stem_type == "bass":
+            params.update({"hp_cutoff_hz": 30.0, "comp_enabled": True,
+                           "comp_ratio": 5.0, "comp_attack_ms": 15.0,
+                           "comp_release_ms": 150.0,
+                           "sidechain_trigger_name": kick_name})
+        elif stem_type == "vocals":
+            params.update({"hp_cutoff_hz": 100.0, "comp_enabled": True,
+                           "comp_ratio": 2.5, "comp_attack_ms": 15.0,
+                           "comp_release_ms": 120.0, "eq_himid_gain_db": 1.0})
+        elif stem_type == "guitar":
+            params.update({"hp_cutoff_hz": 80.0, "comp_enabled": True,
+                           "comp_ratio": 3.0, "pan": 0.3})
+        elif stem_type in ("synth", "pad"):
+            params.update({"stereo_width_amount": 1.4, "comp_enabled": True,
+                           "comp_ratio": 2.0, "comp_attack_ms": 30.0})
+        elif stem_type == "drums":
+            params.update({"hp_cutoff_hz": 40.0, "comp_enabled": True,
+                           "comp_ratio": 3.5, "transient_attack": 0.2})
+        elif stem_type == "fx":
+            params.update({"stereo_width_amount": 1.6, "lp_cutoff_hz": 15000.0,
+                           "comp_enabled": False})
+
+        results[name] = params
+
+    return results

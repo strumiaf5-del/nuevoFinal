@@ -1,9 +1,0 @@
-{
-  "comp_attack_ms": 14.2,
-  "comp_release_ms": 115,
-  "high_shelf_gain_db": 2,
-  "hp_cutoff": 20,
-  "limiter_ceiling": 0.99,
-  "saturation_drive": 0.09,
-  "saturation_mix": 0.3
-}

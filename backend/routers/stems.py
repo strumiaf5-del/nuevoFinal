@@ -16,7 +16,7 @@ router = APIRouter()
 
 def create_router(**dependencies):
     global jobs, read_and_validate, run_stems_job, validate_audio_file
-    global _get_input_duration, UPLOAD_DIR, run_one_click_stem_master_job
+    global _get_input_duration, UPLOAD_DIR
 
     # Attach dependencies as router attributes for backwards compatibility
     for key, val in dependencies.items():
@@ -57,37 +57,6 @@ async def stems_separate(
         "created_at": time.time(), "params": job_params, "progress": 0, "stage": "En cola",
     })
     background_tasks.add_task(run_stems_job, job_id, input_path, mode)
-    return {"job_id": job_id, "status": "queued", "poll_url": f"/job/{job_id}"}
-
-
-@router.post("/stems/one-click-master", tags=["Stems"])
-async def stems_one_click_master(
-    background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
-    mode: str = Form("demucs_4stem"),
-    current_user: dict = Depends(get_current_user),
-):
-    """1-Click Stem Master: separa stems → analiza → IA decide mix → mix → master → resultado.
-    Se pollea con /job/{job_id} igual que cualquier otro job."""
-    if mode not in ("demucs_4stem", "vocals_hq"):
-        raise HTTPException(400, f"mode inválido: '{mode}'. Válidos: demucs_4stem, vocals_hq")
-    validate_audio_file(file.filename)
-    data = await read_and_validate(file)
-    job_id = uuid.uuid4().hex
-    input_path = os.path.join(UPLOAD_DIR, f"{job_id}_{file.filename}")
-    with open(input_path, "wb") as f:
-        f.write(data)
-
-    duration = _get_input_duration(input_path)
-    job_params = {"mode": mode}
-    if duration is not None:
-        job_params["_input_duration_sec"] = duration
-
-    jobs.create_job(job_id, {
-        "status": "queued", "type": "one_click_stem_master", "filename": file.filename,
-        "created_at": time.time(), "params": job_params, "progress": 0, "stage": "En cola",
-    })
-    background_tasks.add_task(run_one_click_stem_master_job, job_id, input_path, mode)
     return {"job_id": job_id, "status": "queued", "poll_url": f"/job/{job_id}"}
 
 
