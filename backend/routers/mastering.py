@@ -6,7 +6,7 @@ import os
 import time
 import uuid
 
-from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Query, Form, HTTPException
+from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Query, Form, HTTPException, Request
 from fastapi.responses import FileResponse
 from typing import Optional
 
@@ -178,58 +178,45 @@ def create_router(**dependencies):
     # ─── /master ──────────────────────────────────────────────────────
     @router.post("/master", tags=["Mastering"], dependencies=[Depends(get_current_user)])
     async def master_async(
+        request: Request,
         background_tasks: BackgroundTasks,
-        file: UploadFile = File(...),
+        file: Optional[UploadFile] = File(None),
+        source_id: str = Query(None, description="Source ID del preview — evita re-upload"),
         platform_target: str = Query(None, description="spotify|youtube|apple_music|tidal|club|cd"),
-        output_format: str = Form("wav", pattern="^(wav|flac|mp3)$"),
+        output_format: str = Query("wav", pattern="^(wav|flac|mp3)$"),
         output_bit_depth: int = Query(24, description="Bit depth de salida (WAV/FLAC): 16, 24 o 32 (float). Se aplica dither TPDF si baja de 32."),
         loudness_target: Optional[float] = Query(None, ge=-30.0, le=-4.0, description="Si se especifica fija el LUFS de salida a este valor."),
-        mb_low_crossover: float = Query(None, ge=20.0, le=2000.0),
-        mb_high_crossover: float = Query(None, ge=500.0, le=20000.0),
-        mb_low_threshold_db: float = Query(None, ge=-60.0, le=0.0),
-        mb_low_ratio: float = Query(None, ge=1.0, le=20.0),
-        mb_low_attack_ms: float = Query(None, ge=0.1, le=200.0),
-        mb_low_release_ms: float = Query(None, ge=10.0, le=1000.0),
-        mb_low_makeup_db: float = Query(None, ge=-12.0, le=24.0),
-        mb_mid_threshold_db: float = Query(None, ge=-60.0, le=0.0),
-        mb_mid_ratio: float = Query(None, ge=1.0, le=20.0),
-        mb_mid_attack_ms: float = Query(None, ge=0.1, le=200.0),
-        mb_mid_release_ms: float = Query(None, ge=10.0, le=1000.0),
-        mb_mid_makeup_db: float = Query(None, ge=-12.0, le=24.0),
-        mb_high_threshold_db: float = Query(None, ge=-60.0, le=0.0),
-        mb_high_ratio: float = Query(None, ge=1.0, le=20.0),
-        mb_high_attack_ms: float = Query(None, ge=0.1, le=200.0),
-        mb_high_release_ms: float = Query(None, ge=10.0, le=1000.0),
-        mb_high_makeup_db: float = Query(None, ge=-12.0, le=24.0),
-        mb_bypass: Optional[bool] = Query(None),
-        input_gain_db: Optional[float] = Query(None, ge=-24.0, le=24.0),
-        headroom_db: float = Query(-1.0, ge=-3.0, le=0.0),
-        ceiling_db: float = Query(-0.3, ge=-1.0, le=0.0),
     ):
         params = {"output_format": output_format, "output_bit_depth": output_bit_depth}
-        if loudness_target:
+        if loudness_target is not None:
             params["loudness_target"] = loudness_target
         if platform_target:
             params["platform_target"] = platform_target
-        # Whitelist contra la signature real de process_audio: solo pasamos
-        # parámetros que la función acepta. Esto evita que free variables del
-        # closure (dependencies, router, get_current_user) contaminen params
-        # via locals() y rompan process_audio(**params) con TypeError.
+
+        # Extraer TODOS los parámetros del query string y filtrar contra
+        # la signature real de process_audio. El frontend envía ~100 params
+        # via URLSearchParams; antes solo se capturaban los 26 declarados
+        # en la firma de este endpoint, perdiendo comp, EQ, saturation, etc.
         if _PROCESS_AUDIO_PARAMS:
-            for key, val in locals().items():
-                if val is not None and key in _PROCESS_AUDIO_PARAMS:
-                    params[key] = val
-        else:
-            # Fallback si la signature no pudo leerse: exclusión explícita
-            # de las free variables conocidas del closure.
-            for key, val in locals().items():
-                if val is not None and key not in (
-                    "file", "background_tasks", "platform_target", "output_format",
-                    "output_bit_depth", "loudness_target", "params",
-                    "dependencies", "router", "get_current_user",
-                    "headroom_db", "ceiling_db",
+            for key, val in request.query_params.items():
+                if key in _PROCESS_AUDIO_PARAMS and key not in (
+                    "output_format", "output_bit_depth", "loudness_target",
+                    "platform_target", "source_id", "preview_seconds",
+                    "preview_start_sec",
                 ):
-                    params[key] = val
+                    # FastAPI query_params devuelve strings; intentar parsear
+                    # a número o booleano para que process_audio reciba tipos correctos.
+                    if val is None or val == "":
+                        continue
+                    try:
+                        if val.lower() in ("true", "false"):
+                            params[key] = val.lower() == "true"
+                        elif "." in val or "e" in val.lower():
+                            params[key] = float(val)
+                        else:
+                            params[key] = int(val)
+                    except (ValueError, TypeError):
+                        params[key] = val
 
         jobs = dependencies.get("jobs")
         run_mastering_job = dependencies.get("run_mastering_job")
@@ -237,16 +224,30 @@ def create_router(**dependencies):
         validate_audio_file_fn = dependencies.get("validate_audio_file")
         read_and_validate_fn = dependencies.get("read_and_validate")
 
-        validate_audio_file_fn(file.filename)
-        data = await read_and_validate_fn(file)
         job_id = uuid.uuid4().hex
-        input_path = os.path.join(upload_dir, f"{job_id}_{file.filename}")
-        with open(input_path, "wb") as fh:
-            fh.write(data)
+
+        if source_id and not file:
+            preview_renderer = dependencies.get("preview_renderer")
+            if not preview_renderer:
+                raise HTTPException(400, "source_id no disponible en este servidor")
+            full_path = preview_renderer.get_full_source_path(source_id)
+            if not full_path or not os.path.exists(full_path):
+                raise HTTPException(400, "Source snapshot expirado o no encontrado — recargá el archivo")
+            input_path = full_path
+            filename = os.path.basename(full_path)
+        elif file:
+            validate_audio_file_fn(file.filename)
+            data = await read_and_validate_fn(file)
+            filename = file.filename
+            input_path = os.path.join(upload_dir, f"{job_id}_{file.filename}")
+            with open(input_path, "wb") as fh:
+                fh.write(data)
+        else:
+            raise HTTPException(400, "Se requiere file o source_id")
 
         jobs.create_job(job_id, {
             "status": "queued",
-            "filename": file.filename,
+            "filename": filename,
             "created_at": time.time(),
             "params": params,
             "progress": 0,
@@ -258,21 +259,68 @@ def create_router(**dependencies):
     # ─── /master/sync ─────────────────────────────────────────────────
     @router.post("/master/sync", tags=["Mastering"], dependencies=[Depends(get_current_user)])
     async def master_sync(
-        file: UploadFile = File(...),
+        request: Request,
+        file: Optional[UploadFile] = File(None),
+        source_id: str = Query(None, description="Source ID del preview — evita re-upload"),
         platform_target: str = Query(None),
-        output_format: str = Form("wav"),
+        output_format: str = Query("wav"),
         output_bit_depth: int = Query(24),
         loudness_target: Optional[float] = Query(None, ge=-30.0, le=-4.0),
-        headroom_db: float = Query(-1.0, ge=-3.0, le=0.0),
-        ceiling_db: float = Query(-0.3, ge=-1.0, le=0.0),
     ):
-        params = {"output_format": output_format, "output_bit_depth": output_bit_depth,
-                  "headroom_db": headroom_db, "ceiling_db": ceiling_db}
+        params = {"output_format": output_format, "output_bit_depth": output_bit_depth}
         if loudness_target is not None:
             params["loudness_target"] = loudness_target
         if platform_target:
             params["platform_target"] = platform_target
-        return await _run_mastering_sync(file, params)
+
+        # Extraer TODOS los params del query string (igual que master_async)
+        if _PROCESS_AUDIO_PARAMS:
+            for key, val in request.query_params.items():
+                if key in _PROCESS_AUDIO_PARAMS and key not in (
+                    "output_format", "output_bit_depth", "loudness_target",
+                    "platform_target", "source_id", "preview_seconds",
+                    "preview_start_sec",
+                ):
+                    if val is None or val == "":
+                        continue
+                    try:
+                        if val.lower() in ("true", "false"):
+                            params[key] = val.lower() == "true"
+                        elif "." in val or "e" in val.lower():
+                            params[key] = float(val)
+                        else:
+                            params[key] = int(val)
+                    except (ValueError, TypeError):
+                        params[key] = val
+
+        if source_id and not file:
+            preview_renderer = dependencies.get("preview_renderer")
+            if not preview_renderer:
+                raise HTTPException(400, "source_id no disponible en este servidor")
+            full_path = preview_renderer.get_full_source_path(source_id)
+            if not full_path or not os.path.exists(full_path):
+                raise HTTPException(400, "Source snapshot expirado o no encontrado — recargá el archivo")
+            from mastering import process_audio
+            valid_keys = _PROCESS_AUDIO_PARAMS
+            kwargs = {k: v for k, v in params.items() if k in valid_keys and v is not None}
+            result = process_audio(full_path, **kwargs)
+            output_path = result["output_path"] if isinstance(result, dict) else result
+            extra_headers = {}
+            try:
+                import soundfile as _sf
+                from mastering import measure_lufs_integrated as _measure_lufs
+                _audio, _sr = _sf.read(output_path), _sf.info(output_path).samplerate
+                _lufs = _measure_lufs(_audio, _sr)
+                extra_headers["X-LUFS-Integrated"] = f"{_lufs:.2f}"
+            except Exception:
+                pass
+            base = os.path.splitext(os.path.basename(full_path))[0]
+            return FileResponse(output_path, media_type="audio/wav",
+                                filename=f"mastered_{base}.wav", headers=extra_headers)
+        elif file:
+            return await _run_mastering_sync(file, params)
+        else:
+            raise HTTPException(400, "Se requiere file o source_id")
 
     # ─── Helper: resolve reference params ──────────────────────────────
     async def _read_reference_params(reference_file: Optional[UploadFile], reference_source: str, reference_library_id: Optional[str]) -> dict:
@@ -390,6 +438,38 @@ def create_router(**dependencies):
         background_tasks.add_task(_run_pitch_job, file, mode, scale, corrections)
         return {"status": "processing", "mode": mode, "scale": scale}
 
+    # ─── /master/multi-reference ───────────────────────────────────────
+    @router.post("/master/multi-reference", tags=["Mastering"], dependencies=[Depends(get_current_user)])
+    async def master_with_multi_reference(
+        background_tasks: BackgroundTasks,
+        file: UploadFile = File(...),
+        reference_files: list[UploadFile] = File(...),
+        reference_weights: str = Form(""),
+        platform_target: str = Query(None),
+        output_format: str = Form("wav"),
+        output_bit_depth: int = Query(24),
+    ):
+        """Matching timbral multivariable: múltiples referencias con pesos."""
+        if len(reference_files) < 2:
+            raise HTTPException(400, "Se necesitan al menos 2 referencias para multi-reference.")
+        if len(reference_files) > 5:
+            raise HTTPException(400, "Máximo 5 referencias.")
+
+        weights = []
+        if reference_weights:
+            try:
+                weights = [float(w) for w in reference_weights.split(",")]
+            except ValueError:
+                weights = []
+        if len(weights) != len(reference_files):
+            weights = [1.0] * len(reference_files)
+
+        background_tasks.add_task(
+            _run_multi_reference_job, file, reference_files, weights,
+            platform_target, output_format, output_bit_depth
+        )
+        return {"status": "processing", "references": len(reference_files), "weights": weights}
+
     return router
 
 
@@ -493,3 +573,52 @@ async def _run_pitch_job(file: UploadFile, mode: str, scale: Optional[str], corr
     except Exception as exc:
         logger.exception("Pitch job failed: %s", exc)
         return {"status": "error", "error": "Pitch correction failed", "code": 500}
+
+
+async def _run_multi_reference_job(
+    file: UploadFile,
+    reference_files: list,
+    weights: list,
+    platform_target: str,
+    output_format: str,
+    output_bit_depth: int,
+):
+    """Job runner para /master/multi-reference (async)."""
+    from mastering import process_audio_with_multi_reference, collect_reference_params_defaults
+    try:
+        upload_dir = globals().get("UPLOAD_DIR") or os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "uploads"
+        )
+        os.makedirs(upload_dir, exist_ok=True)
+
+        uid = uuid.uuid4().hex
+        input_path = os.path.join(upload_dir, f"mref_in_{uid}_{file.filename}")
+        with open(input_path, "wb") as fh:
+            fh.write(await file.read())
+
+        ref_paths = []
+        for i, ref_file in enumerate(reference_files):
+            ref_path = os.path.join(upload_dir, f"mref_ref_{uid}_{i}_{ref_file.filename}")
+            with open(ref_path, "wb") as fh:
+                fh.write(await ref_file.read())
+            ref_paths.append(ref_path)
+
+        params = collect_reference_params_defaults()
+        params["output_format"] = output_format
+        params["output_bit_depth"] = output_bit_depth
+        if platform_target:
+            params["platform_target"] = platform_target
+
+        result = process_audio_with_multi_reference(input_path, ref_paths, weights, **params)
+        return {"status": "done", "path": result}
+    except Exception as exc:
+        logger.exception("Multi-reference job failed: %s", exc)
+        return {"status": "error", "error": str(exc), "code": 500}
+    finally:
+        if 'input_path' in dir() and os.path.exists(input_path):
+            try: os.remove(input_path)
+            except Exception: pass
+        for rp in ref_paths:
+            if os.path.exists(rp):
+                try: os.remove(rp)
+                except Exception: pass

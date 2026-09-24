@@ -1,0 +1,78 @@
+/* ═══════════════════════════════════════════════════════════
+   themes.css — Theme switcher UI (lo ÚNICO que no redefine la skin).
+   El namespace legacy `--bg/--surface/--accent/--text/--muted` se eliminó
+   (Fase 2 del plan consolidado). Todos los tokens de color viven en
+   themes-professional.css bajo el namespace canónico `--ui-*`.
+   P2 CSS-I-2: este archivo antes redefinía .theme-switcher-*,
+   .theme-option*, .theme-divider, .theme-shortcuts, .theme-toast
+   —todos duplicados con themes-professional-skin.css (que carga
+   al final y siempre gana). Borrados. Quedan solo .theme-switcher-btn
+   (que skin no toca), .theme-switcher-menu.hidden, y el bloque de
+   smooth transitions entre temas.
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Botón del switcher (skin no lo redefine) ── */
+.theme-switcher-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 34px;
+  border-radius: var(--radius-md);
+  background: var(--ui-panel);
+  border: 1px solid var(--ui-border);
+  cursor: pointer;
+  transition: background-color 200ms ease, color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  font-size: 18px;
+}
+
+.theme-switcher-btn:hover {
+  background: var(--ui-panel-strong);
+  border-color: var(--ui-warn);
+  transform: scale(1.05);
+}
+
+/* ── Estado oculto del menú (skin define .theme-switcher-menu base) ── */
+.theme-switcher-menu.hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+  pointer-events: none;
+  visibility: hidden;
+  transition: opacity 200ms, transform 200ms, visibility 0s linear 200ms;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   SMOOTH TRANSITIONS ENTRE TEMAS
+   ═══════════════════════════════════════════════════════════ */
+
+html {
+  transition: background-color 300ms ease, color 300ms ease;
+}
+
+:root[data-theme] body,
+:root[data-theme] .app-header,
+:root[data-theme] .sidebar,
+:root[data-theme] .content-area,
+:root[data-theme] .modal,
+:root[data-theme] .btn,
+:root[data-theme] .panel,
+:root[data-theme] .card {
+  transition: background-color 250ms ease,
+              border-color 250ms ease,
+              color 250ms ease,
+              box-shadow 250ms ease;
+}
+
+/* Excluir transiciones en elementos que cambian frecuentemente */
+:root[data-theme] input,
+:root[data-theme] textarea,
+:root[data-theme] canvas {
+  transition: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  :root[data-theme] * {
+    transition: none !important;
+  }
+}

@@ -251,7 +251,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
-    expose_headers=["X-Detected-Key", "X-Confidence", "X-Mode", "X-Output-LUFS", "X-Reference-Match"],
+    expose_headers=["X-Detected-Key", "X-Confidence", "X-Mode", "X-Output-LUFS", "X-Reference-Match", "Content-Disposition", "X-LUFS-Integrated"],
     max_age=86400,
 )
 
@@ -572,7 +572,7 @@ def cleanup_old() -> None:
 
 # Workers de background: la lógica de ejecución vive en job_runners.py;
 # app.py solo ensambla sus dependencias y expone la API HTTP/WebSocket.
-run_mastering_job, run_reference_job, run_normalize_job, run_stems_job = create_job_runners(
+run_mastering_job, run_reference_job, run_normalize_job, run_stems_job, run_one_click_stem_master_job = create_job_runners(
     jobs=jobs,
     cleanup_old=cleanup_old,
     process_audio=process_audio,

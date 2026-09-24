@@ -59,6 +59,7 @@ class AiChatRequest(BaseModel):
     analysis: dict | None = None
     preset: str | None = None
     platform: str | None = None
+    current_params: dict | None = None
 
 
 def _fix_ai_decision_params(decision: dict) -> dict:
@@ -104,6 +105,7 @@ def create_ai_router(*, upload_dir: str, read_and_validate, resolve_input_source
                 req.analysis,
                 req.preset,
                 req.platform,
+                req.current_params,
             )
             return result
         except RuntimeError as exc:
@@ -224,5 +226,26 @@ def create_ai_router(*, upload_dir: str, read_and_validate, resolve_input_source
             "analysis": analysis,
             "poll_url": f"/job/{job_id}",
         }
+
+    @router.post("/ai/prompt-master", tags=["Asistente IA"])
+    @limiter.limit("5/minute")
+    async def ai_prompt_master(request: Request, req: AiChatRequest, current_user: dict = Depends(current_user_dependency)):
+        if not req.analysis:
+            raise HTTPException(400, "Se necesita el análisis del track. Analizá el audio primero.")
+        try:
+            result = await ai_assistant.prompt_master(
+                req.message,
+                req.analysis,
+                req.current_params,
+                req.preset,
+                req.platform,
+            )
+            return result
+        except RuntimeError as exc:
+            logger.exception("RuntimeError en /ai/prompt-master: %s", exc)
+            raise HTTPException(503, "Asistente de IA temporalmente no disponible") from exc
+        except Exception as exc:
+            logger.error(f"Error en /ai/prompt-master: {exc}", exc_info=True)
+            raise HTTPException(500, "Error interno del asistente de IA.") from exc
 
     return router
