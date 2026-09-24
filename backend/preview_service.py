@@ -124,12 +124,22 @@ class PreviewRenderer:
     def _meters_path(self, source_id: str) -> Path:
         return self.snapshots_dir / f"{source_id}.meters.json"
 
+    def _full_source_path(self, source_id: str) -> Path:
+        return self.snapshots_dir / f"{source_id}.full.wav"
+
+    def get_full_source_path(self, source_id: str) -> Optional[str]:
+        """Returns the path to the full (un-cropped) uploaded file, or None."""
+        if not _is_valid_source_id(source_id):
+            return None
+        path = self._full_source_path(source_id)
+        return str(path) if path.exists() else None
+
     def create_snapshot(self, input_path: str, owner_id: str) -> dict[str, Any]:
         if not os.path.exists(input_path):
             raise PreviewSnapshotError("El archivo original no existe")
 
         source_id = uuid.uuid4().hex
-        audio, sr = librosa.load(input_path, sr=None, mono=False, duration=25, offset=0)
+        audio, sr = librosa.load(input_path, sr=None, mono=False)
         if audio.ndim == 1:
             audio = audio[np.newaxis, :]
         if audio.shape[1] == 0 or sr <= 0:
@@ -139,20 +149,32 @@ class PreviewRenderer:
         if not np.isfinite(audio).all():
             raise PreviewSnapshotError("El audio contiene valores NaN o Inf y no puede procesarse")
 
-        cropped = _crop_preview(audio, sr, self.duration_sec).astype(np.float32, copy=False)
+        # Guardar el audio COMPLETO (no recortado a 25s) para que preview_start_sec
+        # pueda elegir desde qué segundo arrancar. El recortado real lo hace
+        # process_audio via _crop_preview con preview_start_sec.
         source_path, meta_path = self._source_paths(source_id)
         tmp_audio = source_path.with_suffix(".tmp.wav")
-        sf.write(tmp_audio, cropped.T, sr, subtype="PCM_16", format="WAV")
+        sf.write(tmp_audio, audio.T, sr, subtype="PCM_16", format="WAV")
         os.replace(tmp_audio, source_path)
 
         digest = hashlib.sha256(source_path.read_bytes()).hexdigest()
-        duration = float(cropped.shape[1] / sr)
+        # duration_sec sigue siendo 25 (la duración del preview), no la del archivo
+        duration = float(self.duration_sec)
+
+        # Guardar copia del archivo completo (para que /master pueda reusarlo
+        # sin re-upload). Solo se guarda si el input_path existe y es accesible.
+        try:
+            full_path = self._full_source_path(source_id)
+            shutil.copy2(input_path, full_path)
+        except Exception:
+            pass  # No es crítico — el master puede caer al flow de upload normal
+
         meta = {
             "source_id": source_id,
             "owner_id": owner_id,
             "duration_sec": duration,
             "sample_rate": int(sr),
-            "channels": int(cropped.shape[0]),
+            "channels": int(audio.shape[0]),
             "source_sha256": digest,
             "created_at": time.time(),
         }
@@ -284,6 +306,21 @@ class PreviewRenderer:
         if not isinstance(chain_meters, dict):
             chain_meters = {"value": chain_meters}
         chain_meters.setdefault("preview_mode", "full-dsp")
+        # Parte B: incluir métricas de analysis_after que NO están en
+        # chain_meters (true_peak_db, mono_compatibility_db, spectrum) y
+        # aplanar post_limiter al top-level para que el frontend pueda leer
+        # peak/rms/lufs/stereo sin navegar. process_audio ya calcula
+        # analysis_after; solo lo estamos exponiendo en el meters file.
+        analysis_after = result.get("analysis_after") or {}
+        if analysis_after:
+            for key in ("true_peak_db", "mono_compatibility_db", "spectrum"):
+                if key in analysis_after and key not in chain_meters:
+                    chain_meters[key] = analysis_after[key]
+        post = chain_meters.get("post_limiter")
+        if isinstance(post, dict):
+            for key in ("peak_db", "rms_db", "lufs", "stereo_correlation"):
+                if key in post and key not in chain_meters:
+                    chain_meters[key] = post[key]
         tmp_meters = meters_path + ".tmp"
         with open(tmp_meters, "w", encoding="utf-8") as handle:
             json.dump(_json_safe(chain_meters), handle, ensure_ascii=False)
