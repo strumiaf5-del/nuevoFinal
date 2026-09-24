@@ -809,18 +809,8 @@
    AURORA SPECTRUM — visualizador FFT transversal
    ═══════════════════════════════════════════════════════════ */
 .aurora-spectrum {
-  display: flex;
-  align-items: center;
-  height: 36px;
-  background: linear-gradient(180deg, rgba(13,16,32,.6), rgba(7,8,18,.92));
-  border-top: 1px solid var(--ui-border);
-  backdrop-filter: blur(8px);
-  overflow: hidden;
-  z-index: var(--z-aurora, 90);
-  pointer-events: none;
-  will-change: transform;
-  contain: layout paint;
-  position: relative;
+  /* Oculto permanente — desactivado por configuración */
+  display: none !important;
 }
 .aurora-spectrum-canvas {
   display: block;
