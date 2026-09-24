@@ -250,7 +250,7 @@
 
   async function downloadAuthenticated(path, options = {}) {
     const { filename = 'lgmdm-download', notify = true, ...fetchOptions } = options || {};
-    const res = await apiFetch(path, fetchOptions);
+    const res = await apiFetch(path, { ...fetchOptions, timeout: 0 });
     if (res.status === 401 || res.status === 403) {
       window.dispatchEvent(new CustomEvent('lgmdm:auth-required', { detail: { status: res.status, path: String(path) } }));
       let detail = 'Sesión expirada. Iniciá sesión nuevamente para descargar.';

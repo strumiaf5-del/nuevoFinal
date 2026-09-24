@@ -179,6 +179,11 @@
         configurable: true
       });
       Object.defineProperty(_publicState, "lastAnalysisData", { get: () => lastAnalysisData, set: (value) => { lastAnalysisData = value; }, configurable: true });
+      // Asistente de IA: estado compartido con 11-ai-assistant-ux.js
+      // (antes vivía solo en la IIFE local y el módulo UX lanzaba
+      // ReferenceError al leerlo como global).
+      Object.defineProperty(_publicState, "aiChatHistory", { get: () => aiChatHistory, set: (value) => { aiChatHistory = Array.isArray(value) ? value : []; }, configurable: true });
+      Object.defineProperty(_publicState, "aiAvailable", { get: () => aiAvailable, set: (value) => { aiAvailable = value; }, configurable: true });
       // FIX MX-12 — stems: getter/setter autoritativo. La asignación dispara
       // el evento `stems-loaded` para que widgets Pro (cross-demask, etc.)
       // actualicen su UI sin polling ni MutationObserver explícito.

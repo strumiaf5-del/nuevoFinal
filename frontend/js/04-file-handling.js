@@ -237,7 +237,7 @@
         const listEl = document.getElementById("libraryList");
         try {
           setPreviewStatus("Trayendo archivo de la librería…");
-          const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/library/${fileId}/download`);
+          const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/library/${fileId}/download`, { timeout: 0 });
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const blob = await res.blob();
           const file = new File([blob], filename, { type: blob.type });
@@ -270,10 +270,20 @@
       loadLibraryWhenAuthenticated();
 
       async function loadFileBuffer(f) {
-        window.LGMDM.state.cachedFileBuffer = await f.arrayBuffer(); // cachear para reusar en previews
+        window.LGMDM.state.cachedFileBuffer = await f.arrayBuffer();
         const buf = await LGMDM.audio.decode(window.LGMDM.state.cachedFileBuffer);
         drawWaveform(buf);
-        // Un único contexto Web Audio compartido; no crear/cerrar contextos locales.
+        // Actualizar el max del slider de preview_start según la duración real
+        const previewStartSlider = document.getElementById('s-preview-start');
+        if (previewStartSlider && buf && buf.duration) {
+          const maxStart = Math.max(0, Math.floor(buf.duration - 25));
+          previewStartSlider.max = String(maxStart);
+          // Si el valor actual excede el nuevo max, ajustar
+          if (Number(previewStartSlider.value) > maxStart) {
+            previewStartSlider.value = String(maxStart);
+            previewStartSlider.dispatchEvent(new Event('input', { bubbles: true }));
+          }
+        }
       }
 
       // ── Referencia (track de referencia para matching) ──────────────────────────

@@ -8,6 +8,7 @@
 // DOM cache centralizado en 00-api.js.
 // ── Enlazar eventos de preview ──────────────────────────────
 const previewTriggerIds = [
+  "s-preview-start",
   "s-ingain",
   "s-peak",
   "s-uselufs",

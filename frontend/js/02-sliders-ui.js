@@ -109,6 +109,7 @@
       const inlineSliders = [
         ['s-normalize-lufs',          'v-normalize-lufs',          (v) => parseFloat(v).toFixed(1)],
         ['s-uselufs-sensitivity',     'v-uselufs-sensitivity',     (v) => Math.round(v) + '%'],
+        ['s-preview-start',           'v-preview-start',           (v) => Math.round(v) + 's'],
         ['s-band-count',              'v-band-count',              (v) => Math.round(v).toString()],
         ['s-ref-loudness-sensitivity','v-ref-loudness-sensitivity', (v) => Math.round(v) + '%'],
         ['s-ref-fixed-lufs-value',    'v-ref-fixed-lufs',          (v) => parseFloat(v).toFixed(1)],

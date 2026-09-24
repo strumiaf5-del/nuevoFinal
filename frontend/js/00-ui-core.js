@@ -195,7 +195,7 @@
       try {
         if (exceptElement !== previewAudio) {
           LG.ab?.stop?.();
-          LG.previewController?.stop?.();
+          LG.previewController?.stop?.({ keepSource: true });
           LG.reference?.stopRefPreview?.();
           LG.mixer?.stopPreview?.(true);
         } else {

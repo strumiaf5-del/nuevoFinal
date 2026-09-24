@@ -72,11 +72,11 @@ function stemEmoji(t) {
   const mixerState = {
     sessionId: getGenUUID(),
     stems: {},
-    stemLibrary: [],
-    stemLibraryLoaded: false,
     jobId: null,
     polling: null,
   };
+  let _stemLibrary = [];
+  let _stemLibraryLoaded = false;
 
   // ── Live preview engine (Web Audio API) ──────────────────────────────────
   const previewEngine = {
@@ -476,19 +476,19 @@ function stemEmoji(t) {
       return base || "stem";
     }
     async function refreshStemLibrary(force) {
-      if (mixerState.stemLibraryLoaded && !force) return mixerState.stemLibrary;
+      if (_stemLibraryLoaded && !force) return _stemLibrary;
       try {
         const res = await LGMDM.api.apiFetch("/mix/stem-library");
         if (!res.ok) throw new Error(await res.text());
         const data = await res.json();
-        mixerState.stemLibrary = data.files || [];
-        mixerState.stemLibraryLoaded = true;
+        _stemLibrary = data.files || [];
+        _stemLibraryLoaded = true;
       } catch (err) {
         console.warn("No se pudo cargar la librería de stems:", err);
-        mixerState.stemLibrary = [];
+        _stemLibrary = [];
       }
       renderMixerSidePanel();
-      return mixerState.stemLibrary;
+      return _stemLibrary;
     }
     async function addStemFromLibrary(item) {
       const stemName = normalizeStemName(item.original_filename, item.id);
@@ -514,7 +514,7 @@ function stemEmoji(t) {
       try {
         const res = await LGMDM.api.apiFetch(`/mix/stem-library/${item.id}`, { method:"DELETE" });
         if (!res.ok) throw new Error(await res.text());
-        mixerState.stemLibrary = mixerState.stemLibrary.filter(x => x.id !== item.id);
+        _stemLibrary = _stemLibrary.filter(x => x.id !== item.id);
         renderMixerSidePanel();
       } catch (err) {
         handleClientError?.(err, "No se pudo borrar el stem.", { context:"mixer-stem-delete" });

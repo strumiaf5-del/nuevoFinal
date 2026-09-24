@@ -28,6 +28,7 @@
     document.querySelectorAll('.lg-workspace-workspace').forEach(p=>{ p.hidden = p.dataset.workspace !== name; });
     if(_analysisRedrawRaf){ cancelAnimationFrame(_analysisRedrawRaf); _analysisRedrawRaf=null; }
     if(name==='analysis') _analysisRedrawRaf=requestAnimationFrame(()=>{ _analysisRedrawRaf=null; window.LGMDM?.analysis?.redraw?.(); });
+    try { window.dispatchEvent(new CustomEvent('lgmdm:workspace-change', { detail: { to: name } })); } catch(_) {}
     try {
       const u = new URL(window.location.href);
       u.searchParams.set('workspace', name);

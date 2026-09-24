@@ -492,7 +492,7 @@ function renderWaveformToCanvas(canvas, audioBuffer, color = "var(--ui-accent)",
 // FIX 2: panel estático en index.html (#loudnessMeterWrap). Esta función solo
 // actualiza valores — no crea DOM. Si los elementos no existen (HTML incompleto),
 // sale silenciosamente.
-function showLoudnessMeter(lufsValue) {
+  function showLoudnessMeter(lufsValue) {
   const wrap = document.getElementById("loudnessMeterWrap");
   if (!wrap) return;
   const numEl = document.getElementById("lufsNumber");
@@ -512,3 +512,13 @@ function showLoudnessMeter(lufsValue) {
           ? "var(--ui-warn)"
           : "var(--ui-muted)";
 }
+
+// F10.x: el waveform NO debe vivir en el tab Análisis. Escuchamos el cambio
+// de workspace y limpiamos cualquier #waveformWrap previo al entrar en
+// analysis (drawWaveform solo lo limpia si ya estamos ahí al dibujar).
+window.addEventListener('lgmdm:workspace-change', (e) => {
+  if (e?.detail?.to === 'analysis') {
+    const existing = document.getElementById('waveformWrap');
+    if (existing) existing.remove();
+  }
+});
