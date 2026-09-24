@@ -1,0 +1,60 @@
+/* ============================================================
+   grid.css — Solo utilidades de grid
+   ============================================================
+   Esta hoja es SOLO para .grid, .stack, .cluster. Nada más.
+   Para estilos de componentes, ver css/components/.
+*/
+
+/* ── .grid: layout responsivo con CSS Grid ──────────── */
+.grid {
+  display: grid;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: 0;
+}
+
+.grid--sidebar-main {
+  grid-template-columns: var(--sidebar-w) var(--handle-w) 1fr;
+}
+
+.grid--stack {
+  grid-template-rows: var(--header-h) 1fr;
+}
+
+.grid--full {
+  grid-template-rows: var(--header-h) 1fr;
+  grid-template-columns: var(--sidebar-w) var(--handle-w) 1fr;
+  height: 100dvh;
+  width: 100vw;
+}
+
+/* ── .stack: vertical flex con gap ───────────────────── */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+}
+
+/* ── .cluster: horizontal flex con gap ───────────────── */
+.cluster {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+/* ── .center: centering utility ─────────────────────────── */
+.center {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ── .fill: child que ocupa todo el espacio disponible ── */
+.fill {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+}

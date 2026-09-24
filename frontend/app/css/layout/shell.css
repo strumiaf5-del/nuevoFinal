@@ -1,0 +1,94 @@
+/* ============================================================
+   shell.css — Layout del app shell
+   ============================================================
+   Define la estructura de la app: topbar + sidebar + main.
+*/
+
+/* ── App shell (root grid) ─────────────────────────────── */
+.app-shell {
+  display: grid;
+  grid-template-rows: var(--header-h) 1fr;
+  grid-template-columns: var(--sidebar-w) var(--handle-w) 1fr;
+  height: 100dvh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.app-shell > .topbar { grid-row: 1; grid-column: 1 / -1; }
+.app-shell > .sidebar { grid-row: 2; grid-column: 1; }
+.app-shell > .resize-handle { grid-row: 2; grid-column: 2; }
+.app-shell > .main { grid-row: 2; grid-column: 3; }
+
+/* ── Topbar ─────────────────────────────────────────────── */
+.topbar {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  background: var(--ui-surface);
+  border-bottom: 1px solid var(--ui-border);
+  height: var(--header-h);
+}
+
+.topbar__brand {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ui-accent);
+}
+
+.topbar__actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-2);
+}
+
+/* ── Sidebar ────────────────────────────────────────────── */
+.sidebar {
+  background: var(--ui-surface);
+  border-right: 1px solid var(--ui-border);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--space-3);
+  min-width: 0;
+}
+
+/* ── Resize handle (drag to resize sidebar) ────────────── */
+.resize-handle {
+  background: var(--ui-border);
+  cursor: col-resize;
+  position: relative;
+  transition: background var(--t-fast);
+}
+
+.resize-handle:hover,
+.resize-handle:active {
+  background: var(--ui-accent);
+}
+
+.resize-handle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 12px;
+  left: -4px;
+}
+
+/* ── Main content area ─────────────────────────────────── */
+.main {
+  background: var(--ui-bg);
+  overflow: auto;
+  padding: var(--space-4);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ── Respeta el viewport en mobile (futuro) ────────────── */
+@media (max-width: 720px) {
+  .app-shell {
+    grid-template-rows: var(--header-h) 1fr;
+    grid-template-columns: 1fr;
+  }
+  .app-shell > .sidebar,
+  .app-shell > .resize-handle {
+    display: none;
+  }
+}

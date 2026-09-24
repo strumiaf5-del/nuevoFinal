@@ -30,7 +30,7 @@
 
 set -euo pipefail
 
-SRC="${SRC:-/root/nuevoFinal/frontend/dist}"
+SRC="${SRC:-/root/nuevoFinal/frontend/app}"
 DST="${DST:-/var/www/masteringaudio}"
 LOG="${LOG:-/var/log/frontend-sync.log}"
 

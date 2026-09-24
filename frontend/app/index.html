@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LGMDM · Intelligent Mastering Console</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/_index.css">
+  <style>
+    /* Solo para verificación de Fase 1 — placeholder */
+    .main__placeholder {
+      padding: var(--space-4);
+      color: var(--ui-muted);
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <span class="topbar__brand">LGMDM</span>
+      <div class="topbar__actions">
+        <button type="button">Theme</button>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="Panel lateral">
+      <h2>Sidebar</h2>
+      <p>Aquí van los controles.</p>
+    </aside>
+
+    <div
+      class="resize-handle"
+      role="separator"
+      aria-label="Redimensionar panel"
+      tabindex="0"
+    ></div>
+
+    <main class="main">
+      <div class="main__placeholder">
+        LGMDM · Fase 1 (esqueleto) — solo layout responsivo.
+        Redimensiona la ventana o arrastra el borde del sidebar.
+      </div>
+    </main>
+  </div>
+</body>
+</html>

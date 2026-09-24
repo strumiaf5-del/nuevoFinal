@@ -1,0 +1,77 @@
+/* ============================================================
+   tokens.css — Única fuente de verdad para variables de diseño
+   ============================================================
+   TODO valor reutilizable vive acá. No literales hardcoded en otros archivos.
+*/
+
+:root {
+  /* ── Layout dimensions ─────────────────────────────── */
+  --header-h: 56px;
+  --sidebar-w-min: 180px;
+  --sidebar-w: clamp(220px, 22vw, 320px);
+  --sidebar-w-max: 480px;
+  --handle-w: 4px;
+
+  /* ── Spacing scale (4px base) ─────────────────────────── */
+  --space-1: 0.25rem;   /* 4px  */
+  --space-2: 0.5rem;    /* 8px  */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2rem;      /* 32px */
+  --space-7: 3rem;      /* 48px */
+  --space-8: 4rem;      /* 64px */
+
+  /* ── Border radius ─────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ── Typography ──────────────────────────────────────── */
+  --font-display: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  /* ── Z-index layers ───────────────────────────────────── */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-modal: 100;
+  --z-toast: 200;
+
+  /* ── Transitions ──────────────────────────────────────── */
+  --t-fast: 120ms ease-out;
+  --t-med: 240ms ease-out;
+  --t-slow: 480ms ease-out;
+
+  /* ── Color tokens (default = dark theme) ─────────────── */
+  --ui-bg: #05060a;
+  --ui-surface: #0a0e18;
+  --ui-panel: #111625;
+  --ui-panel-strong: #1a2038;
+
+  --ui-text: #e8eaf0;
+  --ui-muted: #6c7691;
+  --ui-faint: #404a63;
+
+  --ui-accent: #42e8ff;
+  --ui-accent-2: #a78bff;
+  --ui-good: #35f2a3;
+  --ui-warn: #ffaa00;
+  --ui-danger: #ff5f72;
+
+  --ui-border: #1a1f30;
+  --ui-border-strong: #2a3148;
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+  --shadow-glow: 0 0 24px rgba(66, 232, 255, 0.15);
+}
