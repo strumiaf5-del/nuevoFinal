@@ -378,29 +378,485 @@ startDashboard();
   });
 })();
 
-// ── Live Meters ──────────────────────────────────────────────
-function teardownLiveMeters() {
+// ── Live Meters Web Audio Engine ─────────────────────────────
+const N_SAMPLES = 2048;
+const _timeL = new Float32Array(N_SAMPLES);
+const _timeR = new Float32Array(N_SAMPLES);
+const _byteFreqL = new Uint8Array(N_SAMPLES / 2);
+const _byteFreqR = new Uint8Array(N_SAMPLES / 2);
+const _byteTimeL = new Uint8Array(N_SAMPLES);
+const _byteTimeR = new Uint8Array(N_SAMPLES);
+
+const _liveState = {
+  running: false,
+  sourceNodeOrEl: null,
+  tap: null,
+  lastTs: 0,
+  silentFrames: 0,
+  prevPeakDb: -60,
+  prevRmsDb: -60,
+  prevTruePeakDb: -60,
+  prevLufs: -60,
+  prevCorr: 1.0,
+  prevMonoDb: 0,
+  prevSpectrum: [-80, -80, -80, -80, -80, -80],
+  prevMbLowGr: 0,
+  prevMbMidGr: 0,
+  prevMbHighGr: 0,
+  prevCompGr: 0,
+  prevGlueGr: 0,
+};
+
+function getSliderNum(id, fallback = 0) {
+  const el = document.getElementById(id);
+  if (!el) return fallback;
+  const v = parseFloat(el.value);
+  return Number.isFinite(v) ? v : fallback;
+}
+
+function isChecked(id, fallback = false) {
+  const el = document.getElementById(id);
+  return el ? Boolean(el.checked) : fallback;
+}
+
+function readTimeDomain(analyser, floatBuf, byteBuf) {
+  if (!analyser) return;
+  if (typeof analyser.getFloatTimeDomainData === 'function') {
+    analyser.getFloatTimeDomainData(floatBuf);
+  } else if (typeof analyser.getByteTimeDomainData === 'function') {
+    analyser.getByteTimeDomainData(byteBuf);
+    for (let i = 0; i < byteBuf.length; i++) {
+      floatBuf[i] = (byteBuf[i] - 128) / 128.0;
+    }
+  }
+}
+
+function readFrequency(analyser, byteBuf) {
+  if (!analyser) return;
+  if (typeof analyser.getByteFrequencyData === 'function') {
+    analyser.getByteFrequencyData(byteBuf);
+  }
+}
+
+function isAudioPlaying(sourceElOrNode) {
+  if (sourceElOrNode && sourceElOrNode.tagName === 'AUDIO') {
+    return !sourceElOrNode.paused && !sourceElOrNode.ended;
+  }
+  if (window.LGMDM?.mixerEngine?.previewEngine?.playing) return true;
+  if (window.LGMDM?.ab?.isPlaying?.()) return true;
+  const wrapAudio = document.querySelector('#previewAudioWrap audio') || document.querySelector('#mxrServerPreviewAudio');
+  if (wrapAudio && !wrapAudio.paused && !wrapAudio.ended) return true;
+  return false;
+}
+
+function getBandDb(freqL, freqR, startFreq, endFreq, sampleRate) {
+  const binSize = (sampleRate || 48000) / N_SAMPLES;
+  const startBin = Math.max(0, Math.floor(startFreq / binSize));
+  const endBin = Math.min(N_SAMPLES / 2 - 1, Math.ceil(endFreq / binSize));
+  if (startBin > endBin) return -80;
+  let sumVal = 0;
+  let count = 0;
+  for (let k = startBin; k <= endBin; k++) {
+    const avgByte = 0.5 * ((freqL[k] || 0) + (freqR[k] || 0));
+    sumVal += avgByte;
+    count++;
+  }
+  if (count === 0) return -80;
+  const avgB = sumVal / count;
+  return -100 + (avgB / 255.0) * 80.0;
+}
+
+function tickLiveMeters(timestamp) {
+  const s = window.LGMDM?.state || {};
+  if (!_liveState.running) return;
+
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (timestamp && _liveState.lastTs && (timestamp - _liveState.lastTs) < 100) {
+      s.metersRafId = requestAnimationFrame(tickLiveMeters);
+      return;
+    }
+  } else {
+    if (timestamp && _liveState.lastTs && (timestamp - _liveState.lastTs) < 16) {
+      s.metersRafId = requestAnimationFrame(tickLiveMeters);
+      return;
+    }
+  }
+  _liveState.lastTs = timestamp || 0;
+
+  const tap = _liveState.tap || (window.LGMDM?.proFeatures?.audioTap?.ensure?.(_liveState.sourceNodeOrEl));
+  if (!tap) {
+    s.metersRafId = requestAnimationFrame(tickLiveMeters);
+    return;
+  }
+  _liveState.tap = tap;
+
+  const playing = isAudioPlaying(_liveState.sourceNodeOrEl);
+
+  if (!playing) {
+    _liveState.silentFrames++;
+    if (_liveState.silentFrames > 35) {
+      _liveState.running = false;
+      s.metersRafId = null;
+      if (window.LGMDM?.metrics?.publish) {
+        window.LGMDM.metrics.publish({
+          peak_db: -Infinity,
+          rms_db: -Infinity,
+          lufs: -Infinity,
+          lufs_momentary: -Infinity,
+          true_peak_db: -Infinity,
+          stereo_correlation: 0,
+          mono_compatibility_db: 0,
+          spectrum: [-80, -80, -80, -80, -80, -80],
+          meters: {
+            mb: { low_gr_db: 0, mid_gr_db: 0, high_gr_db: 0 },
+            comp: { gr_db: 0 },
+            glue: { gr_db: 0, bypass: true },
+            parallel: { gr_db: 0, bypass: true },
+            ms_comp: { mid_gr_db: 0, side_gr_db: 0, bypass: true },
+            pre_limiter: { rms_db: -Infinity, peak_db: -Infinity },
+            post_limiter: { rms_db: -Infinity, peak_db: -Infinity, lufs: -Infinity },
+          }
+        }, { source: 'live-idle' });
+      }
+      return;
+    }
+
+    _liveState.prevPeakDb = Math.max(-60, _liveState.prevPeakDb - 1.5);
+    _liveState.prevRmsDb = Math.max(-60, _liveState.prevRmsDb - 1.5);
+    _liveState.prevTruePeakDb = Math.max(-60, _liveState.prevTruePeakDb - 1.5);
+    _liveState.prevLufs = Math.max(-40, _liveState.prevLufs - 1.2);
+    _liveState.prevCorr = _liveState.prevCorr * 0.9;
+    _liveState.prevMbLowGr = Math.max(0, _liveState.prevMbLowGr - 0.5);
+    _liveState.prevMbMidGr = Math.max(0, _liveState.prevMbMidGr - 0.5);
+    _liveState.prevMbHighGr = Math.max(0, _liveState.prevMbHighGr - 0.5);
+    _liveState.prevCompGr = Math.max(0, _liveState.prevCompGr - 0.5);
+    _liveState.prevGlueGr = Math.max(0, _liveState.prevGlueGr - 0.5);
+    _liveState.prevSpectrum = _liveState.prevSpectrum.map(v => Math.max(-80, v - 2.0));
+
+    if (window.LGMDM?.metrics?.publish) {
+      window.LGMDM.metrics.publish({
+        peak_db: _liveState.prevPeakDb <= -59.5 ? -Infinity : _liveState.prevPeakDb,
+        rms_db: _liveState.prevRmsDb <= -59.5 ? -Infinity : _liveState.prevRmsDb,
+        lufs: _liveState.prevLufs <= -39.5 ? -Infinity : _liveState.prevLufs,
+        lufs_momentary: _liveState.prevLufs <= -39.5 ? -Infinity : _liveState.prevLufs,
+        true_peak_db: _liveState.prevTruePeakDb <= -59.5 ? -Infinity : _liveState.prevTruePeakDb,
+        stereo_correlation: _liveState.prevCorr,
+        mono_compatibility_db: _liveState.prevMonoDb,
+        spectrum: _liveState.prevSpectrum,
+        meters: {
+          mb: { low_gr_db: -_liveState.prevMbLowGr, mid_gr_db: -_liveState.prevMbMidGr, high_gr_db: -_liveState.prevMbHighGr },
+          comp: { gr_db: -_liveState.prevCompGr },
+          glue: { gr_db: -_liveState.prevGlueGr, bypass: isChecked('s-glue-bypass') },
+          parallel: { gr_db: 0, bypass: isChecked('parallelBypass') },
+          ms_comp: { mid_gr_db: -_liveState.prevCompGr * 0.8, side_gr_db: -_liveState.prevCompGr * 0.4, bypass: isChecked('s-mscomp-bypass') },
+          pre_limiter: { rms_db: _liveState.prevRmsDb, peak_db: _liveState.prevPeakDb },
+          post_limiter: { rms_db: _liveState.prevRmsDb, peak_db: _liveState.prevPeakDb, lufs: _liveState.prevLufs },
+        }
+      }, { source: 'live-decay' });
+    }
+
+    s.metersRafId = requestAnimationFrame(tickLiveMeters);
+    return;
+  }
+
+  // Audio is active!
+  _liveState.silentFrames = 0;
+
+  const aL = tap.analyserL || tap.analyserGonioL;
+  const aR = tap.analyserR || tap.analyserGonioR;
+  readTimeDomain(aL, _timeL, _byteTimeL);
+  readTimeDomain(aR, _timeR, _byteTimeR);
+  readFrequency(aL, _byteFreqL);
+  readFrequency(aR, _byteFreqR);
+
+  // 1) Peak & True Peak
+  let maxAbs = 0;
+  let maxIdx = 0;
+  let maxIsLeft = true;
+  let sumSq = 0;
+  let sumL = 0, sumR = 0, sumLR = 0, sumMid = 0, sumSide = 0;
+
+  for (let i = 0; i < N_SAMPLES; i++) {
+    const l = _timeL[i];
+    const r = _timeR[i];
+    const absL = Math.abs(l);
+    const absR = Math.abs(r);
+
+    if (absL > maxAbs) { maxAbs = absL; maxIdx = i; maxIsLeft = true; }
+    if (absR > maxAbs) { maxAbs = absR; maxIdx = i; maxIsLeft = false; }
+
+    const sq = 0.5 * (l * l + r * r);
+    sumSq += sq;
+
+    sumL += l * l;
+    sumR += r * r;
+    sumLR += l * r;
+    const m = 0.5 * (l + r);
+    const sd = 0.5 * (l - r);
+    sumMid += m * m;
+    sumSide += sd * sd;
+  }
+
+  // Instant Peak dBFS
+  const rawPeakDb = maxAbs > 1e-4 ? 20 * Math.log10(maxAbs) : -60;
+  if (rawPeakDb > _liveState.prevPeakDb) {
+    _liveState.prevPeakDb = rawPeakDb;
+  } else {
+    _liveState.prevPeakDb = Math.max(-60, _liveState.prevPeakDb - 0.4);
+  }
+
+  // Parabolic True Peak interpolation
+  const arr = maxIsLeft ? _timeL : _timeR;
+  let truePeakAmp = maxAbs;
+  if (maxIdx > 0 && maxIdx < N_SAMPLES - 1) {
+    const alpha = Math.abs(arr[maxIdx - 1]);
+    const beta  = maxAbs;
+    const gamma = Math.abs(arr[maxIdx + 1]);
+    const denom = 2 * beta - alpha - gamma;
+    if (denom > 1e-6) {
+      const delta = 0.5 * (alpha - gamma) / denom;
+      truePeakAmp = Math.max(maxAbs, beta - 0.25 * (alpha - gamma) * delta);
+    }
+  }
+  const rawTpDb = truePeakAmp > 1e-4 ? 20 * Math.log10(truePeakAmp) : -60;
+  if (rawTpDb > _liveState.prevTruePeakDb) {
+    _liveState.prevTruePeakDb = rawTpDb;
+  } else {
+    _liveState.prevTruePeakDb = Math.max(-60, _liveState.prevTruePeakDb - 0.35);
+  }
+
+  // 2) RMS dBFS
+  const rmsVal = Math.sqrt(sumSq / N_SAMPLES);
+  const rawRmsDb = rmsVal > 1e-4 ? 20 * Math.log10(rmsVal) : -60;
+  _liveState.prevRmsDb = _liveState.prevRmsDb === -60
+    ? rawRmsDb
+    : (_liveState.prevRmsDb * 0.8 + rawRmsDb * 0.2);
+
+  // 3) LUFS Momentary (K-weighting RLB approximation)
+  const lufsRaw = -0.691 + 10 * Math.log10(Math.max(1e-9, (sumSq / N_SAMPLES) * 1.25));
+  const boundedLufs = Math.max(-40, Math.min(0, lufsRaw));
+  _liveState.prevLufs = _liveState.prevLufs === -60
+    ? boundedLufs
+    : (_liveState.prevLufs * 0.88 + boundedLufs * 0.12);
+
+  // 4) Stereo Correlation & Mono Compatibility
+  const denomLR = Math.sqrt(sumL * sumR);
+  const rawCorr = denomLR > 1e-7 ? (sumLR / denomLR) : 1.0;
+  const boundedCorr = Math.max(-1.0, Math.min(1.0, rawCorr));
+  _liveState.prevCorr = _liveState.prevCorr * 0.85 + boundedCorr * 0.15;
+
+  const monoDb = 10 * Math.log10((sumMid + 1e-9) / (sumSide + 1e-9));
+  _liveState.prevMonoDb = Math.max(-18, Math.min(18, monoDb));
+
+  // 5) 6 Frequency Bands
+  const sRate = tap.ctx?.sampleRate || 48000;
+  const subDb     = getBandDb(_byteFreqL, _byteFreqR, 20, 60, sRate);
+  const bassDb    = getBandDb(_byteFreqL, _byteFreqR, 60, 250, sRate);
+  const lowmidDb  = getBandDb(_byteFreqL, _byteFreqR, 250, 800, sRate);
+  const midDb     = getBandDb(_byteFreqL, _byteFreqR, 800, 3000, sRate);
+  const highmidDb = getBandDb(_byteFreqL, _byteFreqR, 3000, 8000, sRate);
+  const airDb     = getBandDb(_byteFreqL, _byteFreqR, 8000, 20000, sRate);
+
+  const rawSpectrum = [subDb, bassDb, lowmidDb, midDb, highmidDb, airDb];
+  _liveState.prevSpectrum = _liveState.prevSpectrum.map((prev, idx) => {
+    const target = rawSpectrum[idx];
+    return target > prev ? (prev * 0.4 + target * 0.6) : Math.max(-80, prev - 1.2);
+  });
+
+  // 6) Dynamic Gain Reduction (simulated from active UI thresholds vs live levels)
+  const compThresh = getSliderNum('s-thresh', 0);
+  const compRatio = Math.max(1, getSliderNum('s-ratio', 1));
+  const compOver = _liveState.prevRmsDb - compThresh;
+  const targetCompGr = (compOver > 0 && compRatio > 1) ? compOver * (1 - 1 / compRatio) : 0;
+  _liveState.prevCompGr = targetCompGr > _liveState.prevCompGr
+    ? (_liveState.prevCompGr * 0.3 + targetCompGr * 0.7)
+    : Math.max(0, _liveState.prevCompGr * 0.85);
+
+  const glueThresh = getSliderNum('s-glue-thresh', 0);
+  const glueRatio = Math.max(1, getSliderNum('s-glue-ratio', 1));
+  const glueOver = _liveState.prevRmsDb - glueThresh;
+  const targetGlueGr = (glueOver > 0 && glueRatio > 1 && !isChecked('s-glue-bypass')) ? glueOver * (1 - 1 / glueRatio) : 0;
+  _liveState.prevGlueGr = targetGlueGr > _liveState.prevGlueGr
+    ? (_liveState.prevGlueGr * 0.3 + targetGlueGr * 0.7)
+    : Math.max(0, _liveState.prevGlueGr * 0.85);
+
+  // Multiband GR
+  const mbLowTh = getSliderNum('s-mb-low-th', 0);
+  const mbLowRatio = Math.max(1, getSliderNum('s-mb-low-ratio', 1));
+  const mbLowLevel = Math.max(_liveState.prevSpectrum[0], _liveState.prevSpectrum[1]);
+  const targetMbLowGr = (mbLowLevel > mbLowTh && mbLowRatio > 1 && !isChecked('mb-bypass')) ? (mbLowLevel - mbLowTh) * (1 - 1 / mbLowRatio) : 0;
+  _liveState.prevMbLowGr = targetMbLowGr > _liveState.prevMbLowGr ? (_liveState.prevMbLowGr * 0.3 + targetMbLowGr * 0.7) : Math.max(0, _liveState.prevMbLowGr * 0.85);
+
+  const mbMidTh = getSliderNum('s-mb-mid-th', 0);
+  const mbMidRatio = Math.max(1, getSliderNum('s-mb-mid-ratio', 1));
+  const mbMidLevel = Math.max(_liveState.prevSpectrum[2], _liveState.prevSpectrum[3]);
+  const targetMbMidGr = (mbMidLevel > mbMidTh && mbMidRatio > 1 && !isChecked('mb-bypass')) ? (mbMidLevel - mbMidTh) * (1 - 1 / mbMidRatio) : 0;
+  _liveState.prevMbMidGr = targetMbMidGr > _liveState.prevMbMidGr ? (_liveState.prevMbMidGr * 0.3 + targetMbMidGr * 0.7) : Math.max(0, _liveState.prevMbMidGr * 0.85);
+
+  const mbHighTh = getSliderNum('s-mb-high-th', 0);
+  const mbHighRatio = Math.max(1, getSliderNum('s-mb-high-ratio', 1));
+  const mbHighLevel = Math.max(_liveState.prevSpectrum[4], _liveState.prevSpectrum[5]);
+  const targetMbHighGr = (mbHighLevel > mbHighTh && mbHighRatio > 1 && !isChecked('mb-bypass')) ? (mbHighLevel - mbHighTh) * (1 - 1 / mbHighRatio) : 0;
+  _liveState.prevMbHighGr = targetMbHighGr > _liveState.prevMbHighGr ? (_liveState.prevMbHighGr * 0.3 + targetMbHighGr * 0.7) : Math.max(0, _liveState.prevMbHighGr * 0.85);
+
+  // Pre / Post Limiter
+  const ceiling = getSliderNum('s-ceiling', 0);
+  const preLim = { rms_db: _liveState.prevRmsDb, peak_db: _liveState.prevPeakDb };
+  const postLim = {
+    rms_db: Math.min(_liveState.prevRmsDb, ceiling - 3),
+    peak_db: Math.min(_liveState.prevPeakDb, ceiling),
+    lufs: Math.min(_liveState.prevLufs, ceiling - 2),
+  };
+
+  // Publish to Metrics Store
+  if (window.LGMDM?.metrics?.publish) {
+    window.LGMDM.metrics.publish({
+      peak_db: _liveState.prevPeakDb,
+      rms_db: _liveState.prevRmsDb,
+      lufs: _liveState.prevLufs,
+      lufs_momentary: _liveState.prevLufs,
+      true_peak_db: _liveState.prevTruePeakDb,
+      stereo_correlation: _liveState.prevCorr,
+      mono_compatibility_db: _liveState.prevMonoDb,
+      spectrum: _liveState.prevSpectrum,
+      meters: {
+        mb: {
+          low_gr_db: -_liveState.prevMbLowGr,
+          mid_gr_db: -_liveState.prevMbMidGr,
+          high_gr_db: -_liveState.prevMbHighGr,
+        },
+        comp: { gr_db: -_liveState.prevCompGr },
+        glue: { gr_db: -_liveState.prevGlueGr, bypass: isChecked('s-glue-bypass') },
+        parallel: { gr_db: 0, bypass: isChecked('parallelBypass') },
+        ms_comp: {
+          mid_gr_db: -_liveState.prevCompGr * 0.8,
+          side_gr_db: -_liveState.prevCompGr * 0.4,
+          bypass: isChecked('s-mscomp-bypass'),
+        },
+        pre_limiter: preLim,
+        post_limiter: postLim,
+      }
+    }, { source: 'live-webaudio' });
+  }
+
+  s.metersRafId = requestAnimationFrame(tickLiveMeters);
+}
+
+function setupLiveMeters(audioSourceOrEl) {
+  const s = window.LGMDM?.state || (window.LGMDM.state = {});
+  if (s.metersRafId) {
+    cancelAnimationFrame(s.metersRafId);
+    s.metersRafId = null;
+  }
+
+  if (window.LGMDM?.audio && typeof window.LGMDM.audio.resume === 'function') {
+    window.LGMDM.audio.resume().catch(() => {});
+  }
+
+  const tap = window.LGMDM?.proFeatures?.audioTap?.ensure?.(audioSourceOrEl);
+  _liveState.tap = tap || null;
+  _liveState.sourceNodeOrEl = audioSourceOrEl || tap?.sourceEl || null;
+  _liveState.running = true;
+  _liveState.silentFrames = 0;
+  _liveState.lastTs = 0;
+
+  s.metersRafId = requestAnimationFrame(tickLiveMeters);
+  return true;
+}
+
+function stopLiveMeters() {
   const s = window.LGMDM?.state || {};
   if (s.metersRafId) {
     cancelAnimationFrame(s.metersRafId);
     s.metersRafId = null;
   }
-  if (s.metersSourceNode) {
-    try {
-      s.metersSourceNode.stop();
-    } catch (e) {}
-    s.metersSourceNode = null;
-  }
-  if (s.metersAudioCtx) {
-    try {
-      s.metersAudioCtx.close();
-    } catch (e) {}
-    s.metersAudioCtx = null;
+  _liveState.running = false;
+}
+
+function teardownLiveMeters() {
+  stopLiveMeters();
+  _liveState.sourceNodeOrEl = null;
+  _liveState.tap = null;
+  _liveState.prevPeakDb = -60;
+  _liveState.prevRmsDb = -60;
+  _liveState.prevTruePeakDb = -60;
+  _liveState.prevLufs = -60;
+  _liveState.prevCorr = 1.0;
+  _liveState.prevMonoDb = 0;
+  _liveState.prevSpectrum = [-80, -80, -80, -80, -80, -80];
+
+  const fill = (id) => { const el = document.getElementById(id); if (el) el.style.height = '0%'; };
+  const text = (id, str) => { const el = document.getElementById(id); if (el) el.textContent = str; };
+  fill('meterPeakFill'); text('meterPeakReadout', '-∞ dB');
+  fill('meterRmsFill'); text('meterRmsReadout', '-∞ dB');
+  fill('meterLufsFill'); text('meterLufsReadout', '-∞');
+  fill('meterTruePeakFill'); text('meterTruePeakReadout', '-∞ dBTP');
+  text('lufsNumber', '---');
+  const lufsFill = document.getElementById('lufsBarFill');
+  if (lufsFill) lufsFill.style.width = '0%';
+
+  const stereoFill = document.getElementById('stereoMeterFill');
+  if (stereoFill) stereoFill.style.width = '50%';
+  text('stereoMeterReadout', 'corr: --');
+  text('monoCompatReadout', 'mono: -- dB');
+
+  ['sub','bass','lowmid','mid','highmid','air'].forEach(id => {
+    const bar = document.getElementById(`fb-${id}`);
+    const read = document.getElementById(`fbv-${id}`);
+    if (bar) bar.style.width = '0%';
+    if (read) read.textContent = '-∞';
+  });
+
+  ['grBarLow', 'grBarMid', 'grBarHigh', 'grBarComp', 'grBarGlue', 'grBarParallel'].forEach(id => {
+    const bar = document.getElementById(id);
+    if (bar) bar.style.width = '0%';
+  });
+}
+
+// ── Event bindings for live audio lifecycle ──────────────────
+function onMediaPlay(e) {
+  const target = e?.target;
+  if (target && target.tagName === 'AUDIO') {
+    setupLiveMeters(target);
+  } else if (!target || target === document || target === window) {
+    setupLiveMeters();
   }
 }
 
+function onMediaPause() {
+  if (_liveState.running && !isAudioPlaying(_liveState.sourceNodeOrEl)) {
+    _liveState.silentFrames = 0;
+  }
+}
+
+document.addEventListener('play', onMediaPlay, true);
+document.addEventListener('playing', onMediaPlay, true);
+document.addEventListener('pause', onMediaPause, true);
+document.addEventListener('ended', onMediaPause, true);
+
+window.addEventListener('lgmdm:preview-ready', (e) => {
+  const audioEl = e?.detail?.audio || document.querySelector('#previewAudioWrap audio');
+  if (audioEl) {
+    audioEl.addEventListener('play', () => setupLiveMeters(audioEl));
+    audioEl.addEventListener('playing', () => setupLiveMeters(audioEl));
+  }
+});
+
+window.addEventListener('lgmdm:playback-started', (e) => {
+  setupLiveMeters(e?.detail?.sourceNode);
+});
+
+window.addEventListener('lgmdm:playback-stopped', () => {
+  if (_liveState.running) {
+    _liveState.silentFrames = 0;
+  }
+});
 
   LGMDM.meters = LGMDM.meters || {};
   LGMDM.meters.stopDashboard = stopDashboard;
   LGMDM.meters.teardownLiveMeters = teardownLiveMeters;
+  LGMDM.meters.setupLiveMeters = setupLiveMeters;
+  LGMDM.meters.startLiveMeters = setupLiveMeters;
+  LGMDM.meters.stopLiveMeters = stopLiveMeters;
+  LGMDM.meters.getLiveState = () => ({ ..._liveState });
 })(window);
