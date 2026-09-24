@@ -38,7 +38,6 @@
 /* Base desktop styling for .app-footer */
 .app-footer {
   display: flex;
-  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   padding: 4px 16px;
@@ -50,8 +49,17 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   text-shadow: 0 0 12px var(--ui-accent-ghost);
-  position: relative;
-  z-index: 1;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 28px;
+  z-index: 50;
+}
+
+/* Solo visible cuando el workspace console está activo */
+body:not([data-workspace="console"]) .app-footer {
+  display: none;
 }
 .app-footer span {
   background: linear-gradient(135deg, var(--ui-accent) 0%, var(--ui-accent-2) 100%);
