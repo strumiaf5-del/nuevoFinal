@@ -329,9 +329,11 @@ startDashboard();
     };
     vuBar('vuPreRms', preLim.rms_db, ' dB');
     vuBar('vuPrePeak', preLim.peak_db, ' dB');
+    vuBar('vuPreLufs', preLim.lufs, ' LUFS');
     vuBar('vuPostRms', postLim.rms_db, ' dB');
     vuBar('vuPostPeak', postLim.peak_db, ' dB');
     vuBar('vuPostLufs', postLim.lufs, ' LUFS');
+    vuBar('vuPostGr', postLim.gr_db, ' dB');
 
     // ── Meters summary (aria-live a 1Hz, solo en cruces de threshold) ──────
     updateMetersSummary(m);

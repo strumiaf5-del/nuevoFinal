@@ -26,8 +26,8 @@
 <link href="css/base/themes.css" rel="stylesheet" integrity="sha384-iSATGrLI5KN1G7DPg6M6cO3ZbzmCN8wqOvS7eLOMrLXHF6dMhWyDIxJOzFgqiw5v" crossorigin="anonymous"/>
 <link href="css/base/themes-professional.css" rel="stylesheet" integrity="sha384-FP4/r2MTdKKBa4go0C5XKgguVggxiTxaMB4wH53EmtX4M6d+FtzPcmBZBwmG4tFS" crossorigin="anonymous"/>
 <link href="css/layout/layout-shell.css" rel="stylesheet" integrity="sha384-2CrJ1Gc4HjxcdztMbtyKouqChhu8XYz4JtNmH5j7GAVrGlGQRWh7KafNhmyCDe82" crossorigin="anonymous"/>
-<link href="css/components/studio-pro.css" rel="stylesheet" integrity="sha384-AWzWvdUGDX3Fs3m+usVZgi31qpNQ9y2IXXEg833gnOMSHZyn3AIPrQvYyuatWDZJ" crossorigin="anonymous"/>
-<link href="css/components/lgmdm-studio.css" rel="stylesheet" integrity="sha384-t//lV9QZ+MO1FRarD7KyLzK1s89ZeB6pNNL13d6i6NIwxRsb7cweWFD9ABKeVDP+" crossorigin="anonymous"/>
+<link href="css/components/studio-pro.css" rel="stylesheet" integrity="sha384-5Cu+OgAyHjjx2pDsOYgVyESEzXZ887DRothRPuMyeC2j/JnVQyo/h37LM6ycCCGX" crossorigin="anonymous"/>
+<link href="css/components/lgmdm-studio.css" rel="stylesheet" integrity="sha384-D8eNloPZIhhYz7d3fIT2i6qdljUIPo7+Nbgu4sX9saukqX2hTMVEz8G0PjXh7OXH" crossorigin="anonymous"/>
 <link href="css/components/_index.css" rel="stylesheet" integrity="sha384-jIw/P9atwvRtx4lrevl46eIt5pPW0blZErRD6p5E5q1nfeJFuQfEvqr9qdNR6qhj" crossorigin="anonymous"/>
 <link href="css/components/lgmdm.css" rel="stylesheet" integrity="sha384-+vwirsiCD6f/CrHa1Txp6yNs1d7llBVhGPZnASY391sCpqwOG/IwFFdzWtbET9wJ" crossorigin="anonymous"/>
 <link href="css/widgets/chain-family-tabs.css" rel="stylesheet" integrity="sha384-2BiGKeejFjF8psc/awcFrNTx+uKbYyB3CdkTQLsEKOCxgpaMtASLShRs1c3aLHku" crossorigin="anonymous"/>
@@ -1814,6 +1814,10 @@
 <span class="mb-vu-key">Peak</span>
 <span class="mb-vu-val" id="vuPrePeak" role="meter" aria-label="Pre-Limiter Peak" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="0" aria-valuetext="--">--</span>
 </div>
+<div class="mb-vu-row">
+<span class="mb-vu-key">LUFS</span>
+<span class="mb-vu-val" id="vuPreLufs" role="meter" aria-label="Pre-Limiter LUFS" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="0" aria-valuetext="--">--</span>
+</div>
 </div>
 <div class="mb-vu-item">
 <div class="mb-vu-label">Post-Limiter</div>
@@ -1828,6 +1832,10 @@
 <div class="mb-vu-row">
 <span class="mb-vu-key">LUFS</span>
 <span class="mb-vu-val" id="vuPostLufs" role="meter" aria-label="Post-Limiter LUFS" aria-valuemin="-60" aria-valuemax="0" aria-valuenow="0" aria-valuetext="--">--</span>
+</div>
+<div class="mb-vu-row">
+<span class="mb-vu-key">GR</span>
+<span class="mb-vu-val" id="vuPostGr" role="meter" aria-label="Post-Limiter Gain Reduction" aria-valuemin="-30" aria-valuemax="0" aria-valuenow="0" aria-valuetext="--">--</span>
 </div>
 </div>
 </div>
@@ -1907,7 +1915,7 @@
 <script defer src="js/08-reference-mastering.js" integrity="sha384-GHmjxnGXsY8Aj6ieoHo35CzUJUNLYzqShfwIkhqW629UDftBiVkl1Guci2fPsJZB" crossorigin="anonymous"></script>
 <script defer src="js/09-visualizers.js" integrity="sha384-F6SnUNhqkIYE2Yn1Kj77davYzBg7VIdkQk8Cc+i+asugt1pv7h52Mv584VOpmupE" crossorigin="anonymous"></script>
 <script defer src="js/30-metrics-store.js" integrity="sha384-rXViUfU8uGmqUSC9wqSMJge5zwG+MihjVQgU0vg5QwC1FgC6dJl31AdmhTCEDYH6" crossorigin="anonymous"></script>
-<script defer src="js/10-meters-dashboard.js" integrity="sha384-Funkb+alrQYBSE+sLAPJHnCd7+B+szd1ynAdT4LUd/mow/jDV/kpfOd5QYyE53Ic" crossorigin="anonymous"></script>
+<script defer src="js/10-meters-dashboard.js" integrity="sha384-u9DRNqjVuDG8F7YuXd9AgEwgJPnUa6TY61QWlRVr8OnehsOxzydlesovQ/Li/g8v" crossorigin="anonymous"></script>
 <script defer src="js/11-ai-assistant-ux.js" integrity="sha384-yvsUcZaAQRLZigPRpOSaTDENFbRs9LbpTA10ac8jrjqdD3fFinGjbe9qOEyk0b0a" crossorigin="anonymous"></script>
 <script defer src="js/12-proactive-detection.js" integrity="sha384-ZFUAOfxH2KL+uZpKQ+r9svRxizafOLchl+zPstYMYiEDB+Ba2WYF/56aUJphXExW"></script>
 <script defer src="js/12-lufs-normalize.js" integrity="sha384-XoNAnsr/5KFtMd6tO7bzZECm3e6olLRLD19wRlcEMTSXA1rXJ8O7P84ij6HpiQAt" crossorigin="anonymous"></script>
