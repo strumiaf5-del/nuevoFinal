@@ -2284,7 +2284,13 @@
     // FIX MX-05 — tabs nuevas registradas (insert-style; ver nota en reporte):
     'resonance-tamer':     { cls: 'resonanceTamerWidget',     endpoint: '/dsp/resonance-tamer' },
     'phantom-sub':         { cls: 'phantomSubWidget',         endpoint: '/dsp/phantom-sub' },
-    'cross-demask':        { cls: 'crossDemaskWidget',        endpoint: '/dsp/cross-demask' }
+    'cross-demask':        { cls: 'crossDemaskWidget',        endpoint: '/dsp/cross-demask' },
+    // FIX SUITE-PRO — aliases: los tab IDs reales no coinciden con las keys
+    // de arriba. Sin estos aliases, setupProFeatures('tamer') no encuentra
+    // el spec y el canvas nunca se crea.
+    'tamer':               { cls: 'resonanceTamerWidget',     endpoint: '/dsp/resonance-tamer' },
+    'phantomsub':          { cls: 'phantomSubWidget',         endpoint: '/dsp/phantom-sub' },
+    'demask':              { cls: 'crossDemaskWidget',        endpoint: '/dsp/cross-demask' }
   };
 
   // Instancias activas (una por tab) — la clave es el tabId.
@@ -2339,7 +2345,7 @@
   function setupProFeatures(tabId) {
     if (!tabId) return;
     const spec = PRO_FEATURES[tabId];
-    if (!spec) return;
+    if (!spec) { console.warn('[proFeatures] tab "' + tabId + '" no tiene spec en PRO_FEATURES'); return; }
     const NS = window.LGMDM && window.LGMDM.proFeatures;
     if (!NS) { _proLogMissing('proFeatures namespace'); return; }
     const Cls = NS[spec.cls];
@@ -3099,6 +3105,52 @@ const _SPECTRUM_GRADIENT_LUT = (() => {
   // F5.16 — Exponer las 4 funciones de tab en window para que los stubs
   // externos (40/41/42/43-tab-*.js) puedan delegar sin tener acceso
   // al closure IIFE.
+  // ── Aurora Spectrum — mini visualizador FFT en el footer ──────────────────
+  let _auroraRaf = 0;
+  function _auroraTick() {
+    _auroraRaf = requestAnimationFrame(_auroraTick);
+    const canvas = document.getElementById('auroraSpectrumCanvas');
+    if (!canvas) return;
+    const audio = document.querySelector('#previewAudioWrap audio[data-preview-ready="true"]')
+               || document.querySelector('#previewAudioWrap audio');
+    if (!audio || audio.paused || audio.ended) { _auroraIdle(canvas); return; }
+    const tap = window.LGMDM?.proFeatures?.audioTap?.ensure?.();
+    if (!tap || !tap.ready || !tap.analyserAurora) { _auroraIdle(canvas); return; }
+    const an = tap.analyserAurora;
+    const bins = an.frequencyBinCount;
+    const data = new Uint8Array(bins);
+    an.getByteFrequencyData(data);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const nBars = 48;
+    const barW = w / nBars;
+    const step = Math.max(1, Math.floor(bins / nBars));
+    const grad = ctx.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0.00, '#42e8ff');
+    grad.addColorStop(0.40, '#35f2a3');
+    grad.addColorStop(0.70, '#ffd84d');
+    grad.addColorStop(0.90, '#ff9f43');
+    grad.addColorStop(1.00, '#ff5f72');
+    ctx.fillStyle = grad;
+    for (let i = 0; i < nBars; i++) {
+      const val = data[i * step] || 0;
+      const barH = Math.max(1, (val / 255) * h);
+      ctx.fillRect(i * barW, h - barH, barW - 1, barH);
+    }
+  }
+  function _auroraIdle(canvas) {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => { _auroraRaf = requestAnimationFrame(_auroraTick); }, { once: true });
+  } else {
+    _auroraRaf = requestAnimationFrame(_auroraTick);
+  }
+
   global._lgmdmRenderComplianceTab = renderComplianceTab;
   global._lgmdmRenderAbxTab = renderAbxTab;
   global._lgmdmRenderCodecTab = renderCodecTab;

@@ -1028,4 +1028,112 @@ function renderAdvicePanel(adviceData, title, subtitle) {
 
   // Public contracts consumed by other modules.
   LGMDM.reference.renderAdvicePanel = renderAdvicePanel;
+
+  // ═══════════════════════════════════════════════════════════════
+  // ── Multi-Reference: hasta 5 referencias con pesos ────────────
+  // ═══════════════════════════════════════════════════════════════
+
+  document.getElementById("btnMultiRef")?.addEventListener("click", () => {
+    if (!LGMDM.state.selectedFile) {
+      LGMDM.ui?.showStatus?.(null, "Subí un archivo primero.", "error");
+      return;
+    }
+    _openMultiRefModal();
+  });
+
+  function _openMultiRefModal() {
+    const existing = document.getElementById("multiRefModal");
+    if (existing) existing.remove();
+
+    const modal = document.createElement("div");
+    modal.id = "multiRefModal";
+    modal.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;";
+
+    const box = document.createElement("div");
+    box.style.cssText = "background:var(--ui-panel-bg,#1a1a2e);border-radius:12px;padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto;border:1px solid var(--ui-border,#333);";
+
+    box.innerHTML = `
+      <h2 style="margin:0 0 16px;color:var(--ui-text,#e0e0e0);">🎯 Matching Timbral Multivariable</h2>
+      <p style="font-size:0.85em;color:var(--ui-text-dim,#aaa);margin-bottom:16px;">
+        Subí hasta 5 referencias comerciales y asigná un peso a cada una. El sistema promedia los perfiles espectrales y aplica matching sobre el promedio ponderado.
+      </p>
+      <div id="multiRefSlots"></div>
+      <button id="multiRefAddBtn" type="button" class="btn btn-secondary btn-sm" style="margin:8px 0;">+ Agregar referencia</button>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button id="multiRefSubmitBtn" type="button" class="btn btn-primary" style="flex:1;">Masterizar</button>
+        <button id="multiRefCancelBtn" type="button" class="btn btn-secondary">Cancelar</button>
+      </div>
+    `;
+
+    modal.appendChild(box);
+    document.body.appendChild(modal);
+
+    const slots = box.querySelector("#multiRefSlots");
+    const addBtn = box.querySelector("#multiRefAddBtn");
+    let refData = [];
+
+    function _addSlot() {
+      if (refData.length >= 5) return;
+      const idx = refData.length;
+      refData.push({ file: null, weight: 1.0 });
+      const slot = document.createElement("div");
+      slot.style.cssText = "display:flex;align-items:center;gap:8px;margin:6px 0;padding:8px;border-radius:6px;background:rgba(255,255,255,0.03);";
+      slot.innerHTML = `
+        <input type="file" accept="audio/*" class="multi-ref-file" style="flex:1;font-size:0.8em;" />
+        <label style="font-size:0.8em;color:var(--ui-text-dim,#aaa);">Peso:</label>
+        <input type="range" min="0" max="100" step="5" value="50" class="multi-ref-weight" style="width:80px;" />
+        <span class="multi-ref-weight-val" style="font-size:0.8em;color:var(--ui-text,#e0e0e0);min-width:30px;">50%</span>
+      `;
+      const fileInput = slot.querySelector(".multi-ref-file");
+      const weightInput = slot.querySelector(".multi-ref-weight");
+      const weightVal = slot.querySelector(".multi-ref-weight-val");
+
+      fileInput.addEventListener("change", (e) => {
+        refData[idx].file = e.target.files[0] || null;
+      });
+      weightInput.addEventListener("input", (e) => {
+        refData[idx].weight = Number(e.target.value) / 100;
+        weightVal.textContent = e.target.value + "%";
+      });
+
+      slots.appendChild(slot);
+    }
+
+    addBtn.addEventListener("click", _addSlot);
+    _addSlot();
+    _addSlot();
+
+    box.querySelector("#multiRefCancelBtn").addEventListener("click", () => modal.remove());
+    box.querySelector("#multiRefSubmitBtn").addEventListener("click", async () => {
+      const valid = refData.filter(r => r.file);
+      if (valid.length < 2) {
+        LGMDM.ui?.showStatus?.(null, "Subí al menos 2 referencias.", "error");
+        return;
+      }
+      modal.remove();
+      LGMDM.ui?.clearResults?.();
+      LGMDM.ui?.showStatus?.(null, "Multi-reference mastering…", "processing");
+
+      const fd = new FormData();
+      fd.append("file", LGMDM.state.selectedFile);
+      valid.forEach(r => fd.append("reference_files", r.file));
+      fd.append("reference_weights", valid.map(r => r.weight).join(","));
+
+      try {
+        const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/master/multi-reference`, {
+          method: "POST",
+          body: fd,
+        });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`HTTP ${res.status}: ${text}`);
+        }
+        const data = await res.json();
+        LGMDM.ui?.showStatus?.(null, "Multi-reference encolado ✓", "done");
+      } catch (e) {
+        console.debug("Error multi-ref:", e);
+        LGMDM.ui?.showStatus?.(null, "Error: " + e.message, "error");
+      }
+    });
+  }
 })(window);
