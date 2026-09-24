@@ -591,290 +591,616 @@ input[type="range"]:active::-moz-range-thumb {
   letter-spacing: 0.02em !important;
 }
 
-/* ── Meter Rack ── */
-.lg-meter-rack {
-  background: #04060b !important;
-  border: 1px solid var(--ui-border) !important;
+/* ── MASTER BUS CONSOLE RACK CHASSIS ── */
+.lg-console {
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(35, 231, 255, 0.04) 0%, transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(0, 0, 0, 0.6) 100%),
+    linear-gradient(90deg, #111625 0%, #0a0e18 50%, #111625 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-lg, 14px) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.8),
+    inset 0 0 40px rgba(0, 0, 0, 0.6),
+    0 24px 60px rgba(0, 0, 0, 0.85),
+    0 0 35px var(--ui-accent-ghost) !important;
+  padding: 16px !important;
+  position: relative !important;
+  gap: 12px !important;
+}
+
+/* Machined rack screws on chassis corners */
+.lg-console::before,
+.lg-console::after {
+  content: "" !important;
+  position: absolute !important;
+  width: 9px !important;
+  height: 9px !important;
+  border-radius: 50% !important;
+  background: radial-gradient(circle at 35% 35%, #94a3b8 0%, #334155 55%, #0f172a 100%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.85) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.45), 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  pointer-events: none !important;
+  z-index: 2 !important;
+}
+.lg-console::before { top: 9px !important; left: 10px !important; }
+.lg-console::after { top: 9px !important; right: 10px !important; }
+
+/* Console Topbar — Brushed Machined Header */
+.lg-console-topbar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(0, 0, 0, 0.35) 100%), #0e121e !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 0 12px rgba(0, 0, 0, 0.4) !important;
+  padding: 10px 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+}
+
+.lg-kicker {
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.66rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.22em !important;
+  color: var(--ui-accent) !important;
+  text-shadow: 0 0 10px var(--ui-accent-ghost) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  text-transform: uppercase !important;
+}
+
+.lg-kicker::before {
+  content: "" !important;
+  display: inline-block !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: var(--ui-accent) !important;
+  box-shadow: 0 0 8px var(--ui-accent) !important;
+}
+
+#consoleTrackTitle {
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 1.05rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: -0.01em !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+}
+
+#consoleTrackMeta {
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.72rem !important;
+  color: var(--ui-muted) !important;
+  letter-spacing: 0.04em !important;
+}
+
+/* Console Actions (Analyze & Master Buttons) */
+.lg-console-actions .lg-ghost-btn {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06) 0%, rgba(255, 255, 255, 0.01) 100%), #141a29 !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: var(--ui-text-soft) !important;
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-weight: 750 !important;
+  font-size: 0.76rem !important;
+  letter-spacing: 0.12em !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 8px 16px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 3px 8px rgba(0, 0, 0, 0.5) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.lg-console-actions .lg-ghost-btn:hover {
+  border-color: var(--ui-accent) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 16px var(--ui-accent-ghost), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+  transform: translateY(-1px) !important;
+}
+
+.lg-console-actions .lg-primary-btn {
+  background: linear-gradient(135deg, #00f0ff 0%, #8b5cf6 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.6) !important;
+  color: #03060c !important;
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-weight: 900 !important;
+  font-size: 0.8rem !important;
+  letter-spacing: 0.14em !important;
+  border-radius: var(--radius-sm) !important;
+  padding: 8px 22px !important;
+  box-shadow: 0 0 24px var(--ui-accent-ghost), 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
+  cursor: pointer !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.lg-console-actions .lg-primary-btn:hover {
+  transform: translateY(-1px) scale(1.02) !important;
+  box-shadow: 0 0 35px var(--ui-accent), 0 6px 20px rgba(0, 0, 0, 0.7) !important;
+  filter: brightness(1.1) !important;
+}
+
+/* ── SIGNAL SCOPE (WAVEFORM & DYNAMICS DISPLAY) ── */
+.lg-wave-panel {
+  background: linear-gradient(180deg, #090c14 0%, #05070d 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 20px rgba(0, 0, 0, 0.6) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.lg-wave-stage {
+  height: 165px !important;
+  background: #020306 !important;
+  border: 1px solid rgba(0, 229, 255, 0.2) !important;
+  border-radius: var(--radius-sm) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow:
+    inset 0 3px 14px rgba(0, 0, 0, 0.95),
+    inset 0 0 40px rgba(0, 0, 0, 0.85),
+    0 0 16px rgba(0, 229, 255, 0.06) !important;
+}
+
+/* Phosphor Cathode / Smoked Glass Reflection */
+.lg-wave-stage::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: linear-gradient(175deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 35%, transparent 60%) !important;
+  pointer-events: none !important;
+}
+
+.lg-wave-stage canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+}
+
+.lg-wave-grid {
+  opacity: 0.65 !important;
+  background-image:
+    linear-gradient(rgba(0, 229, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 229, 255, 0.06) 1px, transparent 1px) !important;
+  background-size: 28px 28px !important;
+}
+
+.lg-wave-playhead {
+  width: 2px !important;
+  background: #ffffff !important;
+  box-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff !important;
+  z-index: 5 !important;
+}
+
+.lg-wave-playhead::before {
+  content: "" !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: -4px !important;
+  width: 10px !important;
+  height: 8px !important;
+  background: #00f0ff !important;
+  clip-path: polygon(0% 0%, 100% 0%, 50% 100%) !important;
+  box-shadow: 0 0 8px #00f0ff !important;
+}
+
+/* Digital OLED Readouts in Signal Scope */
+.lg-readouts {
+  display: flex !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+.lg-readouts span {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  background: #020408 !important;
+  border: 1px solid rgba(0, 229, 255, 0.25) !important;
+  border-radius: var(--radius-xs) !important;
+  padding: 3px 8px !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.95), 0 0 8px rgba(0, 229, 255, 0.1) !important;
+}
+
+.lg-readouts b {
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  color: #00f0ff !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.8) !important;
+  letter-spacing: 0.03em !important;
+}
+
+.lg-readouts small {
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.62rem !important;
+  font-weight: 700 !important;
+  color: var(--ui-muted) !important;
+  letter-spacing: 0.1em !important;
+}
+
+.lg-wave-footer {
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.72rem !important;
+  color: var(--ui-muted) !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+  padding: 5px 12px !important;
+  border-radius: var(--radius-xs) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+#consoleTime {
+  color: #00f0ff !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 6px rgba(0, 240, 255, 0.6) !important;
+}
+
+/* ── METER BRIDGE (DUAL CHANNEL STEREO VU) ── */
+.lg-meter-rack {
+  background: linear-gradient(180deg, #090c14 0%, #05070d 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 20px rgba(0, 0, 0, 0.6) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  min-height: 230px !important;
 }
 
 .lg-meter-head {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01)) !important;
-  border-bottom: 1px solid var(--ui-border) !important;
-  padding: 4px 10px !important;
-  font-weight: 700 !important;
-  letter-spacing: 0.1em !important;
-  text-transform: uppercase !important;
-  font-size: 0.65rem !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding-bottom: 6px !important;
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.7rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.14em !important;
 }
 
 .lg-meter-head span:first-child {
   color: var(--ui-accent) !important;
-  text-shadow: 0 0 8px var(--ui-accent-ghost) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
 }
 
-.lg-meter-head span:last-child {
-  color: var(--ui-text-soft) !important;
+.lg-meter-head span:first-child::before {
+  content: "" !important;
+  width: 6px !important;
+  height: 6px !important;
+  border-radius: 50% !important;
+  background: #00ff9d !important;
+  box-shadow: 0 0 8px #00ff9d !important;
+}
+
+#consoleMeterMode {
+  background: rgba(255, 189, 74, 0.12) !important;
+  border: 1px solid rgba(255, 189, 74, 0.35) !important;
+  color: #ffbd4a !important;
+  padding: 2px 7px !important;
+  border-radius: var(--radius-xs) !important;
+  font-size: 0.62rem !important;
+}
+
+.lg-meter-pair {
+  display: flex !important;
+  justify-content: center !important;
+  gap: 16px !important;
+  margin: 10px 0 !important;
+  flex: 1 !important;
+  align-items: stretch !important;
 }
 
 .lg-tall-meter {
-  background: #02040a !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 5px !important;
+  flex: 1 !important;
+  position: relative !important;
+}
+
+/* True Peak Clip LED at Top */
+.lg-tall-meter::before {
+  content: "CLIP" !important;
+  display: block !important;
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.54rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em !important;
+  color: rgba(255, 66, 100, 0.6) !important;
+  background: rgba(255, 42, 95, 0.08) !important;
+  border: 1px solid rgba(255, 42, 95, 0.25) !important;
   border-radius: 2px !important;
-  overflow: hidden;
+  padding: 1px 4px !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
 }
 
 .lg-meter-track {
-  background: #02040a !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  border-radius: 2px !important;
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.9) !important;
+  width: 24px !important;
+  height: 125px !important;
+  background: #020408 !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: 3px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.95), 0 1px 3px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Calibrated hardware LED scale ticks along the track */
+.lg-meter-track::before {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.18) 0px,
+    rgba(255, 255, 255, 0.18) 1px,
+    transparent 1px,
+    transparent 4px
+  ) !important;
+  pointer-events: none !important;
+  z-index: 3 !important;
+  opacity: 0.5 !important;
+}
+
+.lg-meter-track::after {
+  content: "" !important;
+  position: absolute !important;
+  inset: 0 !important;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.35) 0px,
+    rgba(255, 255, 255, 0.35) 1px,
+    transparent 1px,
+    transparent 16px
+  ) !important;
+  pointer-events: none !important;
+  z-index: 4 !important;
 }
 
 .lg-meter-fill {
-  background: linear-gradient(180deg, #ff2a5f 0%, #ff9500 24%, #ffd60a 40%, #00ff9d 68%, #00f0ff 100%) !important;
-  box-shadow: 0 0 12px rgba(0, 255, 157, 0.4) !important;
-  border-radius: 1px !important;
-  transition: height 0.05s linear !important;
+  width: 100% !important;
+  background: linear-gradient(to top, #00f0ff 0%, #00ff9d 55%, #ffd60a 78%, #ff9500 90%, #ff2a5f 100%) !important;
+  box-shadow: 0 0 14px rgba(0, 255, 157, 0.5) !important;
+  transition: height 0.04s cubic-bezier(0, 0, 0.2, 1) !important;
 }
 
-.lg-meter-numbers strong {
-  color: var(--ui-accent) !important;
-  font-family: var(--ui-font-mono, "IBM Plex Mono", monospace) !important;
-  font-weight: 700 !important;
-  text-shadow: 0 0 10px var(--ui-accent-ghost) !important;
+.lg-tall-meter span {
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  color: var(--ui-text-soft) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 3px !important;
+  padding: 1px 6px !important;
+}
+
+.lg-meter-numbers {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+  padding-top: 8px !important;
+}
+
+.lg-meter-numbers > div {
+  background: #020408 !important;
+  border: 1px solid rgba(0, 229, 255, 0.22) !important;
+  border-radius: var(--radius-xs) !important;
+  padding: 4px 6px !important;
+  text-align: center !important;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.95) !important;
 }
 
 .lg-meter-numbers small {
+  display: block !important;
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.58rem !important;
+  font-weight: 700 !important;
   color: var(--ui-muted) !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.08em !important;
-  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
 }
 
-/* ── Spectrum + Waterfall Panels ── */
+.lg-meter-numbers strong {
+  display: block !important;
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.78rem !important;
+  font-weight: 800 !important;
+  color: #00f0ff !important;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.7) !important;
+}
+
+/* ── SPECTRUM ANALYZER (FFT 20 Hz – 20 kHz) ── */
 .lg-spectrum-panel {
-  background: #05070e !important;
-  border: 1px solid var(--ui-border) !important;
+  background: linear-gradient(180deg, #090c14 0%, #05070d 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
   border-radius: var(--radius-md) !important;
-  box-shadow: inset 0 4px 16px rgba(0, 0, 0, 0.9), 0 0 20px rgba(0, 0, 0, 0.3) !important;
-  overflow: hidden;
+  padding: 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 6px 20px rgba(0, 0, 0, 0.6) !important;
+  margin-top: 10px !important;
 }
 
 .lg-spectrum-stage {
-  background: #03050c !important;
-  border-top: 1px solid var(--ui-border) !important;
-  border-bottom: 1px solid var(--ui-border) !important;
-}
-
-.lg-waterfall-stage {
-  background: #03050c !important;
-}
-
-.lg-spectrum-stage canvas,
-.lg-waterfall-stage canvas {
-  border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important;
-}
-
-/* ── Transport Controls ── */
-.lg-console-transport {
-  background: linear-gradient(180deg, rgba(11, 15, 26, 0.7) 0%, rgba(7, 9, 16, 0.5) 100%) !important;
-  border-top: 1px solid var(--ui-border) !important;
-  padding: 10px 16px !important;
-  border-radius: 0 0 var(--radius-lg) var(--radius-lg) !important;
-}
-
-.lg-transport-group {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%) !important;
-  border: 1px solid var(--ui-border) !important;
-  border-radius: var(--radius-md) !important;
-  padding: 6px 10px !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-}
-
-.lg-transport-status {
-  background: rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid var(--ui-border) !important;
+  height: 180px !important;
+  background: #020306 !important;
+  border: 1px solid rgba(0, 229, 255, 0.18) !important;
   border-radius: var(--radius-sm) !important;
-  padding: 2px 10px !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow:
+    inset 0 3px 14px rgba(0, 0, 0, 0.95),
+    inset 0 0 40px rgba(0, 0, 0, 0.8),
+    0 0 16px rgba(0, 229, 255, 0.06) !important;
 }
 
-.lg-status-dot {
-  background: var(--ui-good) !important;
-  box-shadow: 0 0 8px var(--ui-good), 0 0 16px var(--ui-good) !important;
-  animation: pulse-dot 1.8s infinite ease-in-out !important;
+.lg-spectrum-stage canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
 }
 
-.lg-transport-hint {
-  color: var(--ui-faint) !important;
-  font-family: var(--ui-font-mono, "IBM Plex Mono", monospace) !important;
-  font-size: 0.65rem !important;
-  letter-spacing: 0.06em !important;
-}
-
-/* ── Stage Cards (chain nodes) ── */
-.lg-stage-card {
-  background: linear-gradient(175deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 35%, rgba(0, 0, 0, 0.4) 100%), var(--ui-surface) !important;
-  border: 1px solid var(--ui-border) !important;
-  border-radius: var(--radius-lg) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 20px rgba(0, 0, 0, 0.45), 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 24px var(--ui-accent-ghost) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease !important;
-}
-
-.lg-stage-card:hover {
-  border-color: var(--ui-border-strong) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 20px 48px rgba(0, 0, 0, 0.65), 0 0 35px var(--ui-accent-ghost) !important;
-  transform: translateY(-1px) !important;
-}
-
-/* ── Console Spectrum Freq Scale ── */
 .spectrum-freq-scale {
-  background: #03050c !important;
-  border-top: 1px solid var(--ui-border) !important;
-  padding: 2px 8px !important;
+  display: flex !important;
+  justify-content: space-between !important;
+  margin-top: 6px !important;
+  padding: 4px 6px !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+  border-radius: var(--radius-xs) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
 
 .spectrum-freq-scale span {
-  color: var(--ui-faint) !important;
-  font-family: var(--ui-font-mono, "IBM Plex Mono", monospace) !important;
-  font-size: 0.6rem !important;
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.65rem !important;
+  font-weight: 700 !important;
+  color: var(--ui-muted) !important;
   letter-spacing: 0.05em !important;
 }
 
-/* ── Preview Audio Wrapper ── */
-.preview-audio {
-  background: rgba(0, 0, 0, 0.3) !important;
-  border: 1px solid var(--ui-border) !important;
-  border-radius: var(--radius-sm) !important;
-  padding: 6px !important;
+/* ── MASTER TRANSPORT CONTROLLER (SSL STYLE ILLUMINATED PUSHBUTTONS) ── */
+.lg-console-transport {
+  background: linear-gradient(180deg, #111522 0%, #0a0d16 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--radius-md) !important;
+  padding: 10px 14px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.8), 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+  margin-top: 10px !important;
 }
 
-.preview-audio audio {
-  width: 100% !important;
-  border-radius: var(--radius-sm) !important;
+.lg-transport-group {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
 }
 
-/* ── Live Badge ── */
-.lg-live {
-  color: var(--ui-good) !important;
+.lg-transport-btn {
+  height: 38px !important;
+  min-width: 44px !important;
+  padding: 0 14px !important;
+  border-radius: 6px !important;
+  font-family: var(--ui-font-mono, monospace) !important;
   font-weight: 800 !important;
-  letter-spacing: 0.12em !important;
-  text-transform: uppercase !important;
-  font-size: 0.6rem !important;
+  font-size: 0.78rem !important;
+  letter-spacing: 0.1em !important;
+  cursor: pointer !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 55%, rgba(0, 0, 0, 0.6) 100%), #141926 !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  color: var(--ui-text-soft) !important;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.9) !important;
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
 }
 
-.lg-live i {
-  background: var(--ui-good) !important;
-  box-shadow: 0 0 8px var(--ui-good) !important;
-  animation: pulse-dot 1.5s infinite ease-in-out !important;
-  border-radius: 50% !important;
-  width: 6px !important;
-  height: 6px !important;
-  display: inline-block !important;
-  margin-right: 4px !important;
-}
-
-/* ─────────────────────────────────────────────────────────────
-   10. POLISH — Scrollbar, Selection, Focus, Hover
-   ───────────────────────────────────────────────────────────── */
-
-/* Custom scrollbar — dark con accent en hover */
-::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 5px;
-  border: 2px solid transparent;
-  background-clip: content-box;
-  transition: background 0.2s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--ui-accent-ghost);
-  background-clip: content-box;
-}
-
-::-webkit-scrollbar-corner {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-/* Firefox scrollbar */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.08) rgba(0, 0, 0, 0.3);
-}
-
-/* Selection color */
-::selection {
-  background: var(--ui-accent-ghost);
-  color: var(--ui-text);
-  text-shadow: 0 0 8px var(--ui-accent-ghost);
-}
-
-::selection:active {
-  background: var(--ui-accent-2);
-}
-
-/* Focus ring — neon outline */
-*:focus-visible {
-  outline: 2px solid var(--ui-accent) !important;
-  outline-offset: 2px !important;
-  box-shadow: 0 0 10px var(--ui-accent-ghost) !important;
-  border-radius: var(--radius-xs) !important;
-}
-
-/* Hover lift en process cards */
-.process-card:hover, .control-card:hover {
+.lg-transport-btn:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.04) 55%, rgba(0, 0, 0, 0.5) 100%), #182030 !important;
+  border-color: var(--ui-accent) !important;
+  color: #ffffff !important;
   transform: translateY(-1px) !important;
+  box-shadow: 0 0 16px var(--ui-accent-ghost), 0 4px 12px rgba(0, 0, 0, 0.7) !important;
 }
 
-/* Slider thumb glow cuando está activo (being dragged) */
-input[type="range"]:active::-webkit-slider-thumb {
-  transform: scale(1.3) !important;
-  box-shadow: 0 0 30px var(--ui-accent), 0 0 50px var(--ui-accent-2), 0 6px 16px rgba(0, 0, 0, 0.9) !important;
+.lg-transport-btn:active {
+  transform: translateY(1px) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.9), inset 0 2px 5px rgba(0, 0, 0, 0.8) !important;
 }
 
-input[type="range"]:active::-moz-range-thumb {
-  transform: scale(1.3) !important;
-  box-shadow: 0 0 30px var(--ui-accent), 0 0 50px var(--ui-accent-2), 0 6px 16px rgba(0, 0, 0, 0.9) !important;
+/* Play Button Active State */
+#consolePlayBtn[aria-pressed="true"] {
+  background: linear-gradient(180deg, rgba(0, 255, 157, 0.25) 0%, rgba(0, 160, 90, 0.3) 100%), #071810 !important;
+  border-color: #00ff9d !important;
+  color: #00ff9d !important;
+  box-shadow: 0 0 22px rgba(0, 255, 157, 0.5), inset 0 0 10px rgba(0, 255, 157, 0.3) !important;
+  text-shadow: 0 0 10px #00ff9d !important;
 }
 
-/* Range track glow cuando el slider tiene focus */
-input[type="range"]:focus::-webkit-slider-runnable-track {
-  box-shadow: 0 0 12px var(--ui-accent-ghost) !important;
+/* Stop Button Styling */
+#consoleStopBtn:hover {
+  border-color: #ff9500 !important;
+  color: #ffbd4a !important;
+  box-shadow: 0 0 16px rgba(255, 149, 0, 0.4) !important;
 }
 
-/* Val display — digital LED readout */
-.param .val,
-.val {
-  text-shadow: 0 0 12px var(--ui-accent-ghost), 0 0 2px var(--ui-accent) !important;
+/* A/B Compare Toggle */
+#consoleABToggle {
+  background: linear-gradient(180deg, rgba(155, 92, 255, 0.12) 0%, rgba(0, 0, 0, 0.5) 100%), #141726 !important;
+  border-color: rgba(155, 92, 255, 0.35) !important;
+  color: #c4b5fd !important;
 }
 
-/* Status text glow */
+#consoleABToggle:hover {
+  border-color: var(--ui-accent-2) !important;
+  box-shadow: 0 0 18px rgba(155, 92, 255, 0.4) !important;
+}
+
+/* Master vs Original Tally Switch */
+#consoleABMaster.active {
+  background: linear-gradient(180deg, rgba(255, 189, 74, 0.25) 0%, rgba(180, 100, 10, 0.3) 100%), #1c1306 !important;
+  border-color: #ffbd4a !important;
+  color: #ffbd4a !important;
+  box-shadow: 0 0 20px rgba(255, 189, 74, 0.45), inset 0 0 8px rgba(255, 189, 74, 0.25) !important;
+  text-shadow: 0 0 8px #ffbd4a !important;
+}
+
+#consoleABOriginal.active {
+  background: linear-gradient(180deg, rgba(0, 240, 255, 0.22) 0%, rgba(0, 140, 180, 0.28) 100%), #05161c !important;
+  border-color: #00f0ff !important;
+  color: #00f0ff !important;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.45), inset 0 0 8px rgba(0, 240, 255, 0.25) !important;
+  text-shadow: 0 0 8px #00f0ff !important;
+}
+
+/* Status Pill with VFD glow */
+.lg-transport-status {
+  background: #020408 !important;
+  border: 1px solid rgba(0, 229, 255, 0.28) !important;
+  border-radius: var(--radius-pill) !important;
+  padding: 4px 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 229, 255, 0.12) !important;
+}
+
+.lg-status-dot {
+  width: 8px !important;
+  height: 8px !important;
+  border-radius: 50% !important;
+  background: #00ff9d !important;
+  box-shadow: 0 0 10px #00ff9d !important;
+}
+
 #consoleStatus {
-  color: var(--ui-accent) !important;
-  font-weight: 600 !important;
-  text-shadow: 0 0 8px var(--ui-accent-ghost) !important;
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  color: #e2f8ff !important;
+  letter-spacing: 0.04em !important;
 }
 
-/* Content area subtle grid backdrop */
-.content-area {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.008) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.008) 1px, transparent 1px) !important;
-  background-size: 40px 40px !important;
-}
-
-/* Smooth transitions en todo */
-.process-card, .control-card, .lg-stage-card, .panel-block, .lg-console {
-  transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.25s ease !important;
+.lg-transport-hint {
+  font-family: var(--ui-font-mono, monospace) !important;
+  font-size: 0.65rem !important;
+  color: var(--ui-muted) !important;
+  letter-spacing: 0.08em !important;
+  background: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: var(--radius-xs) !important;
+  padding: 3px 8px !important;
 }
