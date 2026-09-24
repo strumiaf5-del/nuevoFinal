@@ -17,6 +17,10 @@ window.addEventListener("beforeunload", () => {
   LGMDM.meters?.stopDashboard?.();
   LGMDM.meters?.teardownLiveMeters?.();
   try { window.LGMDM?.spectrum?.clear?.(); } catch (e) {}
+  try {
+    const hist = window.LGMDM?.state?.aiChatHistory;
+    if (Array.isArray(hist) && hist.length) sessionStorage.setItem('lgmdm_ai_chat', JSON.stringify(hist));
+  } catch (_) {}
 });
 
 // ═══════════════════════════════════════════════════════════════
@@ -91,14 +95,14 @@ function aiAppendSuggestionCard(suggestedParams, summary, explanation) {
   list.className = "ai-suggestion-card-list";
   Object.entries(suggestedParams).forEach(([key, value]) => {
     const li = document.createElement("li");
-    const label = PARAM_LABELS[key] || key;
+    const label = (window.LGMDM?.params?.labels?.[key]) || key;
     let valueText;
     if (typeof value === "boolean") {
       valueText = value ? "activado" : "desactivado";
     } else if (typeof value === "string") {
       valueText = value;
     } else {
-      valueText = formatParamValue(value, key);
+      valueText = (window.LGMDM?.params?.formatParamValue?.(value, key)) || String(value);
     }
     const labelEl = document.createElement("span");
     labelEl.className = "ai-suggestion-param";
@@ -179,7 +183,8 @@ function aiRenderSuggestions() {
           aiAppendNote("Primero subí un archivo de audio para poder masterizarlo.");
           return;
         }
-        document.getElementById("btnAutoMaster").click();
+        aiEl("aiInput").value = s;
+        aiSendMessage();
         return;
       }
       aiEl("aiInput").value = s;
@@ -193,18 +198,18 @@ async function aiCheckStatus() {
   try {
     const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/ai/status`);
     const data = await res.json();
-    aiAvailable = !!data.available;
-    aiRequired("aiStatusLine", "11-ai-assistant-ux:status").textContent = aiAvailable
+    LGMDM.state.aiAvailable = !!data.available;
+    aiRequired("aiStatusLine", "11-ai-assistant-ux:status").textContent = LGMDM.state.aiAvailable
       ? window.LGMDM.state.lastAnalysisData
         ? "Analizando tu track"
         : "Listo para ayudarte"
       : "No configurado";
-    aiRequired("aiSend", "11-ai-assistant-ux:status").disabled = !aiAvailable;
-    if (!aiAvailable) {
+    aiRequired("aiSend", "11-ai-assistant-ux:status").disabled = !LGMDM.state.aiAvailable;
+    if (!LGMDM.state.aiAvailable) {
       aiAppendNote(data.reason || "El asistente de IA no está configurado en el backend (falta GEMINI_API_KEY).");
     }
   } catch (e) {
-    aiAvailable = false;
+    LGMDM.state.aiAvailable = false;
     aiRequired("aiStatusLine", "11-ai-assistant-ux:status").textContent = "Sin conexión al backend";
     aiRequired("aiSend", "11-ai-assistant-ux:status").disabled = true;
     aiAppendNote("No se pudo conectar con el backend (" + LGMDM.api.apiBase() + ") para consultar el asistente.");
@@ -224,30 +229,37 @@ async function aiSendMessage() {
   aiShowTyping();
   send.disabled = true;
 
+  const isPromptMaster = _detectPromptMasterIntent(msg);
+
   try {
-    const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/ai/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: msg,
-        history: aiChatHistory,
-        analysis: window.LGMDM.state.lastAnalysisData,
-        preset: aiCurrentPreset(),
-        platform: aiCurrentPlatform(),
-      }),
-    });
-    aiHideTyping();
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`HTTP ${res.status}: ${text}`);
+    if (isPromptMaster && window.LGMDM.state.lastAnalysisData) {
+      await _handlePromptToMaster(msg);
+    } else {
+      const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/ai/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: msg,
+          history: LGMDM.state.aiChatHistory,
+          analysis: window.LGMDM.state.lastAnalysisData,
+          preset: aiCurrentPreset(),
+          platform: aiCurrentPlatform(),
+          current_params: window.LGMDM?.params?.collect?.() || {},
+        }),
+      });
+      aiHideTyping();
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}: ${text}`);
+      }
+      const data = await res.json();
+      aiAppendMessage("assistant", data.reply);
+      if (data.suggested_params && Object.keys(data.suggested_params).length) {
+        aiAppendSuggestionCard(data.suggested_params, data.suggestion_summary, data.suggestion_explanation);
+      }
+      LGMDM.state.aiChatHistory.push({ role: "user", content: msg });
+      LGMDM.state.aiChatHistory.push({ role: "assistant", content: data.reply });
     }
-    const data = await res.json();
-    aiAppendMessage("assistant", data.reply);
-    if (data.suggested_params && Object.keys(data.suggested_params).length) {
-      aiAppendSuggestionCard(data.suggested_params, data.suggestion_summary, data.suggestion_explanation);
-    }
-    aiChatHistory.push({ role: "user", content: msg });
-    aiChatHistory.push({ role: "assistant", content: data.reply });
   } catch (e) {
     aiHideTyping();
     console.debug("Error en /ai/chat:", e);
@@ -290,11 +302,24 @@ aiEl("aiFab")?.addEventListener("click", () => {
       closeOnEscape: true,
       onClose: () => { panel.classList.remove("open"); },
     });
-    if (aiAvailable === null) {
-      aiAppendMessage(
-        "assistant",
-        "¡Hola! Soy tu asistente de mastering. Puedo analizar tu track y darte consejos, o directamente masterizarlo por vos: elijo preset, plataforma target y ajustes de nivel según el análisis técnico. ¿En qué te ayudo?",
-      );
+    if (LGMDM.state.aiAvailable === null) {
+      // Restaurar chat anterior desde sessionStorage
+      try {
+        const saved = sessionStorage.getItem('lgmdm_ai_chat');
+        if (saved) {
+          const hist = JSON.parse(saved);
+          if (Array.isArray(hist) && hist.length) {
+            LGMDM.state.aiChatHistory = hist;
+            hist.forEach(m => aiAppendMessage(m.role, m.content));
+          }
+        }
+      } catch (_) {}
+      if (!LGMDM.state.aiChatHistory || !LGMDM.state.aiChatHistory.length) {
+        aiAppendMessage(
+          "assistant",
+          "¡Hola! Soy tu asistente de mastering. Puedo analizar tu track y darte consejos, o directamente masterizarlo por vos: elijo preset, plataforma target y ajustes de nivel según el análisis técnico. ¿En qué te ayudo?",
+        );
+      }
       aiRenderSuggestions();
       aiCheckStatus();
     }
@@ -403,6 +428,93 @@ aiEl("aiInput")?.addEventListener("input", function () {
 // 07-mastering-actions.js corre fuera de este IIFE y llama a estas
 // funciones directamente (sin prefijo LGMDM.ai.), asi que quedan
 // expuestas tambien como globales.
+// ═══════════════════════════════════════════════════════════════
+// ── Prompt-to-Master: NL → cadena completa → preview → master ──
+// ═══════════════════════════════════════════════════════════════
+
+const _PROMPT_MASTER_KEYWORDS = [
+  "masterizá", "masteriza", "masterizar", "masterizame", "masterízame",
+  "hacé el master", "hace el master", "haz el master",
+  "full master", "prompt to master",
+  "master completo", "master este", "master este track",
+  "master it", "master this",
+];
+
+function _detectPromptMasterIntent(msg) {
+  const lower = (msg || "").toLowerCase().trim();
+  if (!lower) return false;
+  return _PROMPT_MASTER_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+async function _handlePromptToMaster(msg) {
+  if (!window.LGMDM.state.selectedFile) {
+    aiHideTyping();
+    aiAppendNote("Primero subí un archivo de audio.");
+    return;
+  }
+  if (!window.LGMDM.state.lastAnalysisData) {
+    aiHideTyping();
+    aiAppendNote("Primero analizá el track (botón Analizar) antes de pedir un master completo.");
+    return;
+  }
+
+  try {
+    const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/ai/prompt-master`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: msg,
+        analysis: window.LGMDM.state.lastAnalysisData,
+        current_params: window.LGMDM?.params?.collect?.() || {},
+        preset: aiCurrentPreset(),
+        platform: aiCurrentPlatform(),
+      }),
+    });
+    aiHideTyping();
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`HTTP ${res.status}: ${text}`);
+    }
+    const data = await res.json();
+
+    aiAppendMessage("assistant", data.reply || "Acá tenés el master.");
+
+    if (data.params && Object.keys(data.params).length) {
+      aiAppendSuggestionCard(data.params, data.suggestion_summary, data.reasoning);
+      const masterBtn = document.createElement("button");
+      masterBtn.type = "button";
+      masterBtn.className = "btn btn-primary btn-sm";
+      masterBtn.style.cssText = "width:100%;margin-top:8px;font-weight:700;";
+      masterBtn.textContent = "🎚️ Confirmar y masterizar";
+      masterBtn.addEventListener("click", () => {
+        if (window.LGMDM?.params?.build && window.LGMDM?.params?.renderPreview) {
+          window.LGMDM.params.build(data.params);
+          window.LGMDM.params.renderPreview(data.params, {
+            onConfirm: () => {
+              const btn = document.getElementById("btnMaster") || document.getElementById("btnMasterAsync");
+              if (btn) btn.click();
+            },
+          });
+        } else {
+          if (typeof applyPresetToUI === "function") applyPresetToUI(data.params);
+          const btn = document.getElementById("btnMaster") || document.getElementById("btnMasterAsync");
+          if (btn) btn.click();
+        }
+      });
+      const msgBox = aiRequired("aiMessages");
+      const lastMsg = msgBox.lastElementChild;
+      if (lastMsg) lastMsg.appendChild(masterBtn);
+    }
+
+    LGMDM.state.aiChatHistory.push({ role: "user", content: msg });
+    LGMDM.state.aiChatHistory.push({ role: "assistant", content: data.reply || "Master generado." });
+  } catch (e) {
+    aiHideTyping();
+    console.debug("Error en /ai/prompt-master:", e);
+    aiAppendNote("Error en prompt-to-master: " + e.message);
+  }
+}
+
 Object.assign(global, {
   aiEl,
   aiAppendMessage,
@@ -413,6 +525,8 @@ Object.assign(global, {
   aiCurrentPlatform,
   aiRenderSuggestions,
   aiAppendSuggestionCard,
+  _detectPromptMasterIntent,
+  _handlePromptToMaster,
 });
 
 })(window);

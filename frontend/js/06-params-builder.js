@@ -178,7 +178,7 @@
         // segundo 15 default). Backend ya soporta este parámetro en
         // POST /preview (routers/preview.py:188-189). Si en el futuro se
         // quiere parametrizable, mover a un slider en la UI.
-        obj.preview_start_sec = 30;
+        obj.preview_start_sec = Number(LGMDM.dom.byId("s-preview-start")?.value) || 0;
         return obj;
       }
       function buildParams() {
@@ -569,6 +569,164 @@
         return panel;
       }
 
-(function(){ const LG=window.LGMDM=window.LGMDM||{}; LG.params=Object.assign(LG.params||{}, { collect: collectMasterParamsObj, build: buildParams, renderPreview: renderParamsPreview }); })();
+(function(){ const LG=window.LGMDM=window.LGMDM||{}; LG.params=Object.assign(LG.params||{}, { collect: collectMasterParamsObj, build: buildParams, renderPreview: renderParamsPreview, labels: PARAM_LABELS, formatParamValue: formatParamValue }); })();
+
+      // ── Autoguardado / restauración de parámetros en sessionStorage ──────
+      // Permite recargar la página sin perder los valores de los sliders/
+      // toggles del sidebar. Se guarda antes de unload y se restaura al cargar.
+      const PARAMS_STORE_KEY = 'lgmdm_params_snapshot';
+
+      function _saveAllParamInputs() {
+        try {
+          const obj = collectMasterParamsObj();
+          sessionStorage.setItem(PARAMS_STORE_KEY, JSON.stringify(obj));
+        } catch(_) {}
+      }
+
+      function _restoreAllParamInputs() {
+        try {
+          const raw = sessionStorage.getItem(PARAMS_STORE_KEY);
+          if (!raw) return;
+          const saved = JSON.parse(raw);
+          if (!saved || typeof saved !== 'object') return;
+          // Mapeo inverso: nombre de parámetro → ID de input.
+          // Para checkboxes (booleanos) usamos .checked, el resto .value.
+          const boolKeys = new Set([
+            'use_lufs_normalize','comp_pdr','comp_stereo_link','nr_bypass',
+            'glue_bypass','glue_pdr','clipper_bypass','lp_bypass',
+            'use_stereo_enhancer','mb_pdr','mb_bypass','mb_stereo_bypass',
+            'ms_eq_bypass','ms_comp_bypass','ms_comp_pdr','dyneq_bypass',
+            'reso_bypass','tonal_balance_bypass','parallel_bypass',
+            'adaptive_loudness_weighting',
+          ]);
+          // Mapeo param key → element id (la mayoría es s-<key> con ajustes)
+          const keyToId = {
+            input_gain_db: 's-ingain', target_peak: 's-peak',
+            target_lufs: 's-lufstarget',
+            loudness_sensitivity_amount: 's-uselufs-sensitivity',
+            comp_threshold_db: 's-thresh', comp_ratio: 's-ratio',
+            comp_attack_ms: 's-cattack', comp_release_ms: 's-crelease',
+            comp_makeup_db: 's-cmakeup', comp_pdr_hold_ms: 's-comp-pdr-hold',
+            oversample_mode: 's-oversample',
+            nr_strength: 's-nr-strength', nr_noise_sample_sec: 's-nr-noise-sample-sec',
+            glue_threshold_db: 's-glue-thresh', glue_ratio: 's-glue-ratio',
+            glue_attack_ms: 's-glue-attack', glue_release_ms: 's-glue-release',
+            glue_makeup_db: 's-glue-makeup', glue_pdr_hold_ms: 's-glue-pdr-hold',
+            clipper_mode: 's-clip-mode', clipper_ceiling: 's-clip-ceiling',
+            clipper_drive_db: 's-clip-drive', hp_cutoff: 's-hp',
+            lp_cutoff: 's-lp-cutoff',
+            high_shelf_gain_db: 's-air', high_shelf_freq_hz: 's-shelf-freq',
+            low_shelf_gain_db: 's-lowshelf', low_shelf_freq_hz: 's-lowshelf-freq',
+            eq1_freq: 's-eq1freq', eq1_gain: 's-eq1gain', eq1_q: 's-eq1q',
+            eq2_freq: 's-eq2freq', eq2_gain: 's-eq2gain', eq2_q: 's-eq2q',
+            eq3_freq: 's-eq3freq', eq3_gain: 's-eq3gain', eq3_q: 's-eq3q',
+            eq4_freq: 's-eq4freq', eq4_gain: 's-eq4gain', eq4_q: 's-eq4q',
+            eq5_freq: 's-eq5freq', eq5_gain: 's-eq5gain', eq5_q: 's-eq5q',
+            eq6_freq: 's-eq6freq', eq6_gain: 's-eq6gain', eq6_q: 's-eq6q',
+            transient_attack: 's-tatt', transient_sustain: 's-tsus',
+            saturation_drive: 's-satdrive', saturation_mode: 's-satmode',
+            saturation_mix: 's-satmix',
+            mid_gain_db: 's-mgain', side_gain_db: 's-sgain',
+            stereo_width_amount: 's-width', haas_delay_ms: 's-haas',
+            enhancer_bass_mono_freq: 's-bassmono',
+            reverb_size: 's-rsize', reverb_wet: 's-rwet',
+            limiter_ceiling: 's-ceiling', limiter_release_ms: 's-lrelease',
+            output_format: 's-format', output_bit_depth: 's-bitdepth',
+            dither_mode: 's-dither-mode',
+            mb_low_crossover: 's-mb-lowx', mb_high_crossover: 's-mb-highx',
+            mb_low_threshold_db: 's-mb-low-th', mb_low_ratio: 's-mb-low-ratio',
+            mb_low_attack_ms: 's-mb-low-att', mb_low_release_ms: 's-mb-low-rel',
+            mb_low_makeup_db: 's-mb-low-mu',
+            mb_mid_threshold_db: 's-mb-mid-th', mb_mid_ratio: 's-mb-mid-ratio',
+            mb_mid_attack_ms: 's-mb-mid-att', mb_mid_release_ms: 's-mb-mid-rel',
+            mb_mid_makeup_db: 's-mb-mid-mu',
+            mb_high_threshold_db: 's-mb-high-th', mb_high_ratio: 's-mb-high-ratio',
+            mb_high_attack_ms: 's-mb-high-att', mb_high_release_ms: 's-mb-high-rel',
+            mb_high_makeup_db: 's-mb-high-mu',
+            mb_pdr_hold_ms: 's-mb-pdr-hold',
+            mb_stereo_low_width: 's-mb-sw-low', mb_stereo_mid_width: 's-mb-sw-mid',
+            mb_stereo_high_width: 's-mb-sw-high',
+            mb_stereo_low_crossover: 's-mb-sw-lowx',
+            mb_stereo_high_crossover: 's-mb-sw-highx',
+            parallel_mix: 'parallelMix', parallel_threshold_db: 'parallelThresh',
+            parallel_ratio: 'parallelRatio', parallel_attack_ms: 'parallelAttack',
+            parallel_release_ms: 'parallelRelease',
+            ms_mid_freq: 's-mseq-mid-freq', ms_mid_gain: 's-mseq-mid-gain',
+            ms_mid_q: 's-mseq-mid-q',
+            ms_side_freq: 's-mseq-side-freq', ms_side_gain: 's-mseq-side-gain',
+            ms_side_q: 's-mseq-side-q',
+            ms_comp_mid_threshold_db: 's-mscomp-mid-thresh',
+            ms_comp_mid_ratio: 's-mscomp-mid-ratio',
+            ms_comp_mid_attack_ms: 's-mscomp-mid-attack',
+            ms_comp_mid_release_ms: 's-mscomp-mid-release',
+            ms_comp_mid_makeup_db: 's-mscomp-mid-makeup',
+            ms_comp_side_threshold_db: 's-mscomp-side-thresh',
+            ms_comp_side_ratio: 's-mscomp-side-ratio',
+            ms_comp_side_attack_ms: 's-mscomp-side-attack',
+            ms_comp_side_release_ms: 's-mscomp-side-release',
+            ms_comp_side_makeup_db: 's-mscomp-side-makeup',
+            ms_comp_pdr_hold_ms: 's-mscomp-pdr-hold',
+            dyneq_freq: 's-dyneq-freq', dyneq_q: 's-dyneq-q',
+            dyneq_threshold_db: 's-dyneq-thresh', dyneq_ratio: 's-dyneq-ratio',
+            dyneq_attack_ms: 's-dyneq-attack', dyneq_release_ms: 's-dyneq-release',
+            dyneq_max_reduction_db: 's-dyneq-maxred',
+            reso_freq: 's-reso-freq', reso_q: 's-reso-q',
+            reso_threshold_db: 's-reso-thresh', reso_ratio: 's-reso-ratio',
+            reso_attack_ms: 's-reso-attack', reso_release_ms: 's-reso-release',
+            reso_max_reduction_db: 's-reso-maxred',
+            low_end_mono_freq: 's-mono-freq', low_end_mono_amount: 's-mono-amount',
+            eq_mode: 's-eq-mode', linear_phase_taps: 's-lp-taps',
+            tonal_balance_amount: 's-tonalbal-amount',
+            tonal_balance_max_boost_db: 's-tonalbal-boost',
+            tonal_balance_max_cut_db: 's-tonalbal-cut',
+            tonal_balance_max_bands: 's-tonalbal-bands',
+            platform_target: 's-platform',
+            preview_start_sec: 's-preview-start',
+          };
+          const boolIdMap = {
+            use_lufs_normalize: 's-uselufs',
+            adaptive_loudness_weighting: 's-uselufs-adaptive',
+            comp_pdr: 's-comp-pdr', comp_stereo_link: 's-comp-link',
+            nr_bypass: 's-nr-bypass',
+            glue_bypass: 's-glue-bypass', glue_pdr: 's-glue-pdr',
+            clipper_bypass: 's-clip-bypass', lp_bypass: 's-lp-bypass',
+            use_stereo_enhancer: 's-enhancer',
+            mb_pdr: 's-mb-pdr', mb_bypass: 'mb-bypass',
+            mb_stereo_bypass: 'mb-stereo-bypass',
+            ms_eq_bypass: 's-mseq-bypass', ms_comp_bypass: 's-mscomp-bypass',
+            ms_comp_pdr: 's-mscomp-pdr',
+            dyneq_bypass: 's-dyneq-bypass', reso_bypass: 's-reso-bypass',
+            tonal_balance_bypass: 's-tonalbal-bypass',
+            parallel_bypass: 'parallelBypass',
+          };
+          for (const [key, val] of Object.entries(saved)) {
+            if (boolKeys.has(key)) {
+              const id = boolIdMap[key];
+              const el = id ? document.getElementById(id) : null;
+              if (el && typeof val === 'boolean') {
+                el.checked = val;
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            } else {
+              const id = keyToId[key];
+              const el = id ? document.getElementById(id) : null;
+              if (el && val != null) {
+                el.value = val;
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                el.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+            }
+          }
+        } catch(_) {}
+      }
+
+      // Guardar antes de unload y restaurar al cargar.
+      window.addEventListener('beforeunload', _saveAllParamInputs);
+      // Restaurar después de que el DOM esté listo y los sliders inicializados.
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => setTimeout(_restoreAllParamInputs, 300));
+      } else {
+        setTimeout(_restoreAllParamInputs, 300);
+      }
 
 })();

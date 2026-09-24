@@ -306,4 +306,24 @@
 
       LGMDM.dom.requireById("s-platform", "03-presets.js")?.addEventListener("change", () => window.LGMDM?.previewController?.request?.());
 
+      // ── Descargar preset JSON con TODOS los parámetros actuales ──────────────────
+      LGMDM.dom.requireById("btnSavePresetJson", "03-presets.js")?.addEventListener("click", () => {
+        const params = window.LGMDM.params.collect();
+        const data = JSON.stringify(params, null, 2);
+        const blob = new Blob([data], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "lgmdm-preset-" + new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-") + ".json";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        const statusEl = LGMDM.dom.requireById("presetLoadStatus", "03-presets.js");
+        if (statusEl) {
+          statusEl.style.color = "var(--ui-warn)";
+          statusEl.textContent = "✓ Preset descargado (" + Object.keys(params).length + " parámetros)";
+        }
+      });
+
       // ── File handling ────────────────────────────────────────────────────────────

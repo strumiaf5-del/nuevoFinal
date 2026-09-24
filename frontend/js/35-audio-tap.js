@@ -85,7 +85,23 @@
       sourceType = 'mixer';
     } else if (audioEl) {
       try {
-        mediaSource = ctx.createMediaElementSource(audioEl);
+        // Un HTMLMediaElement solo puede pasarse UNA VEZ a
+        // createMediaElementSource en toda su vida (aunque se desconecte
+        // después). Cacheamos el nodo en el elemento para que ensure()
+        // pueda reconstruir el tap tras teardown() sin lanzar
+        // "already connected previously to a different MediaElementSourceNode".
+        let cached = audioEl.__lgmdmMediaSource;
+        if (cached) {
+          if (cached.context === ctx) {
+            mediaSource = cached;
+          } else {
+            console.warn('[audio-tap] elemento ya conectado a un AudioContext cerrado — esperar nuevo render');
+            return null;
+          }
+        } else {
+          mediaSource = ctx.createMediaElementSource(audioEl);
+          audioEl.__lgmdmMediaSource = mediaSource;
+        }
         masterOut = ctx.createGain();
         masterOut.gain.value = 1;
         mediaSource.connect(masterOut);
@@ -113,6 +129,8 @@
     const analyserWaterfall = ctx.createAnalyser();
     analyserWaterfall.fftSize = 2048;
     analyserWaterfall.smoothingTimeConstant = 0.65;
+    analyserWaterfall.minDecibels = -120;
+    analyserWaterfall.maxDecibels = 0;
     splitter.connect(analyserWaterfall, 0);
 
     const analyserAurora = ctx.createAnalyser();

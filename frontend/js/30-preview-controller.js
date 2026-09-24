@@ -31,7 +31,29 @@
   let metricsPollTimer = null;
   let wired = false;
 
-  const METRICS_POLL_MS = 2000;
+  const METRICS_POLL_MS = 10000;
+
+  // Convierte spectrum dict del backend ({sub_bass: db, ...}) al array de
+  // 6 bandas que espera 10-meters-dashboard (order: sub, bass, lowmid, mid,
+  // highmid, air). El backend tiene 7 bandas (sub_bass, bass, low_mid, mid,
+  // upper_mid, presence, air) — agrupamos upper_mid+presence en highmid (3-8k).
+  function _spectrumToArray(spec) {
+    if (Array.isArray(spec)) return spec;
+    if (!spec || typeof spec !== 'object') return null;
+    const sub    = Number(spec.sub_bass);
+    const bass   = Number(spec.bass);
+    const lowmid = Number(spec.low_mid);
+    const mid    = Number(spec.mid);
+    const umid   = Number(spec.upper_mid);
+    const pres   = Number(spec.presence);
+    const air    = Number(spec.air);
+    const highmid = (Number.isFinite(umid) && Number.isFinite(pres))
+      ? (umid + pres) / 2
+      : (Number.isFinite(umid) ? umid : pres);
+    const arr = [sub, bass, lowmid, mid, highmid, air];
+    if (arr.every(v => Number.isFinite(v))) return arr;
+    return null;
+  }
 
   const checkbox = () => document.getElementById('s-livepreview');
   const audioWrap = () => document.getElementById('previewAudioWrap');
@@ -169,7 +191,27 @@
       if (!res.ok) return;
       const data = await res.json();
       if (data && typeof LG.metrics?.publish === 'function') {
-        const flat = data.meters ? Object.assign({}, data, data.meters) : data;
+        // Parte A: aplanar `meters` y `post_limiter` al top-level para que
+        // 10-meters-dashboard lea peak/rms/lufs/stereo sin navegar.
+        let flat = data;
+        if (data.meters) flat = Object.assign({}, data, data.meters);
+        const post = flat.post_limiter || (flat.chain_meters && flat.chain_meters.post_limiter);
+        if (post) {
+          if (post.peak_db != null && flat.peak_db == null) flat.peak_db = post.peak_db;
+          if (post.rms_db != null && flat.rms_db == null) flat.rms_db = post.rms_db;
+          if (post.lufs != null && flat.lufs == null) flat.lufs = post.lufs;
+          if (post.stereo_correlation != null && flat.stereo_correlation == null) flat.stereo_correlation = post.stereo_correlation;
+        }
+        // Parte B (si backend ya incluye analysis_after en meters): copiar
+        // true_peak / mono_compat / spectrum al top-level si vienen anidados.
+        const aa = flat.analysis_after;
+        if (aa) {
+          if (aa.true_peak_db != null && flat.true_peak_db == null) flat.true_peak_db = aa.true_peak_db;
+          if (aa.mono_compatibility_db != null && flat.mono_compatibility_db == null) flat.mono_compatibility_db = aa.mono_compatibility_db;
+          if (aa.spectrum && flat.spectrum == null) flat.spectrum = _spectrumToArray(aa.spectrum);
+        }
+        // Si spectrum ya está top-level pero es dict (backend plano), convertir.
+        if (flat.spectrum && !Array.isArray(flat.spectrum)) flat.spectrum = _spectrumToArray(flat.spectrum);
         try { LG.metrics.publish(flat, { source: 'preview-live-poll' }); } catch (_) {}
       }
     } catch (_) { /* telemetría opcional — no bloquear el ciclo */ }
@@ -309,6 +351,7 @@
           preview_duration_sec: getPreviewDurationSec(),
           params: collected,
         };
+        console.debug('[preview] preview_start_sec sent:', collected.preview_start_sec);
 
         const res = await LG.api.apiFetch(`${LG.api.apiBase()}/preview`, {
           method: 'POST',
@@ -337,7 +380,9 @@
         }
         if (!isRenderActive(current)) return false;
 
-        const previewId = res.headers.get('X-Preview-ID');
+        const previewId = res.headers.get('X-Preview-ID')
+          || res.headers.get('X-Preview-Source-Id')
+          || previewSourceId;
         let telemetry = null;
         if (previewId) {
           try {
@@ -354,12 +399,30 @@
         // FIX BUG #2: publish telemetry to metrics store so dashboard (mb GR,
         // comp/gr, glue/gr, parallel/gr) updates after preview render.
         if (typeof LG.metrics?.publish === 'function' && telemetry) {
-          const flat = telemetry.meters ? Object.assign({}, telemetry, telemetry.meters) : telemetry;
+          // Parte A: aplanar igual que en pollMetrics.
+          let flat = telemetry;
+          if (telemetry.meters) flat = Object.assign({}, telemetry, telemetry.meters);
+          const post = flat.post_limiter || (flat.chain_meters && flat.chain_meters.post_limiter);
+          if (post) {
+            if (post.peak_db != null && flat.peak_db == null) flat.peak_db = post.peak_db;
+            if (post.rms_db != null && flat.rms_db == null) flat.rms_db = post.rms_db;
+            if (post.lufs != null && flat.lufs == null) flat.lufs = post.lufs;
+            if (post.stereo_correlation != null && flat.stereo_correlation == null) flat.stereo_correlation = post.stereo_correlation;
+          }
+          const aa = flat.analysis_after;
+          if (aa) {
+            if (aa.true_peak_db != null && flat.true_peak_db == null) flat.true_peak_db = aa.true_peak_db;
+            if (aa.mono_compatibility_db != null && flat.mono_compatibility_db == null) flat.mono_compatibility_db = aa.mono_compatibility_db;
+            if (aa.spectrum && flat.spectrum == null) flat.spectrum = _spectrumToArray(aa.spectrum);
+          }
+          if (flat.spectrum && !Array.isArray(flat.spectrum)) flat.spectrum = _spectrumToArray(flat.spectrum);
           try { LG.metrics.publish(flat, { source: 'preview-telemetry' }); }
           catch (e) { console.warn('[preview] telemetry publish failed:', e.message); }
         }
-        // FIX 1: arrancar polling live de metrics cada 2s — alimenta GR/LUFS
-        // bars en tiempo real (no solo al final del render).
+        // FIX 1: arrancar polling live de metrics cada 10s (respaldo lento) —
+        // los medidores en vivo ahora los alimenta el metering client-side
+        // (44-realtime-meters.js) a ~30fps; el polling solo refresca campos
+        // backend-only (true_peak, mono_compat, spectrum integrado).
         startMetricsPolling();
         const audio = audioWrap()?.querySelector('audio');
         global.dispatchEvent(new CustomEvent('lgmdm:preview-telemetry', { detail:{ telemetry, audio, previewId: previewId || null } }));
@@ -411,7 +474,6 @@
     clearTimeout(requestTimer);
     requestTimer = null;
     cancelRender();
-    clearPreviewAudio();
     scheduleRender('parameter-change');
   }
 

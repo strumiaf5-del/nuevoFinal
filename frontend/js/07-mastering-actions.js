@@ -9,21 +9,21 @@ async function submitMasterJob() {
   LGMDM.ui.showStatus(null, "Enviando archivo…", "queued");
   document.getElementById("btnMaster")?.setAttribute("disabled", "");
 
-  const fd = new FormData();
-  if (window.LGMDM.state.selectedFile) {
-    fd.append("file", window.LGMDM.state.selectedFile);
-  }
-  if (window.LGMDM.state._previewLibraryId) {
-    fd.append("library_id", window.LGMDM.state._previewLibraryId);
-  }
-
   try {
     const params = LGMDM.params.build();
-    const url = `${LGMDM.api.apiBase()}/master?${params.toString()}`;
-    console.debug("📤 Enviando a:", url);
-    console.debug("📁 Archivo:", window.LGMDM.state.selectedFile.name, window.LGMDM.state.selectedFile.size, "bytes");
-    const res = await LGMDM.api.apiFetch(url, { method: "POST", body: fd });
-    console.debug("📥 Respuesta:", res.status, res.statusText);
+    const sourceId = window.LGMDM?.previewController?.getSourceId?.();
+    let url, fetchOpts;
+    if (sourceId) {
+      url = `${LGMDM.api.apiBase()}/master?${params.toString()}&source_id=${encodeURIComponent(sourceId)}`;
+      fetchOpts = { method: "POST" };
+    } else {
+      const fd = new FormData();
+      if (window.LGMDM.state.selectedFile) fd.append("file", window.LGMDM.state.selectedFile);
+      if (window.LGMDM.state._previewLibraryId) fd.append("library_id", window.LGMDM.state._previewLibraryId);
+      url = `${LGMDM.api.apiBase()}/master?${params.toString()}`;
+      fetchOpts = { method: "POST", body: fd };
+    }
+    const res = await LGMDM.api.apiFetch(url, { ...fetchOpts, timeout: 0 });
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`HTTP ${res.status}: ${text}`);
@@ -33,7 +33,6 @@ async function submitMasterJob() {
     LGMDM.ui.showStatus(null, `Job ${window.LGMDM.state.currentJobId.slice(0, 8)}… en cola`, "queued");
     startPolling(window.LGMDM.state.currentJobId);
   } catch (e) {
-    console.debug("❌ Error al enviar:", e);
     LGMDM.ui.showStatus(null, "Error: " + e.message, "error");
     document.getElementById("btnMaster")?.removeAttribute("disabled");
   }
@@ -45,7 +44,7 @@ document.getElementById("btnMaster")?.addEventListener("click", () => {
     return;
   }
   LGMDM.ui.clearResults();
-  const paramsObj = collectMasterParamsObj();
+  const paramsObj = window.LGMDM.params.collect();
   window.LGMDM.params.renderPreview(paramsObj, { onConfirm: submitMasterJob });
 });
 
@@ -60,15 +59,21 @@ async function submitMasterSync() {
   }
   LGMDM.ui.clearResults();
   LGMDM.ui.showStatus(null, "Procesando (sync)…", "processing");
-  const fd = new FormData();
-  if (window.LGMDM.state.selectedFile) {
-    fd.append("file", window.LGMDM.state.selectedFile);
-  }
-  if (window.LGMDM.state._previewLibraryId) fd.append("library_id", window.LGMDM.state._previewLibraryId);
   try {
     const params = LGMDM.params.build();
-    const url = `${LGMDM.api.apiBase()}/master/sync?${params.toString()}`;
-    const res = await LGMDM.api.apiFetch(url, { method: "POST", body: fd });
+    const sourceId = window.LGMDM?.previewController?.getSourceId?.();
+    let url, fetchOpts;
+    if (sourceId) {
+      url = `${LGMDM.api.apiBase()}/master/sync?${params.toString()}&source_id=${encodeURIComponent(sourceId)}`;
+      fetchOpts = { method: "POST" };
+    } else {
+      const fd = new FormData();
+      if (window.LGMDM.state.selectedFile) fd.append("file", window.LGMDM.state.selectedFile);
+      if (window.LGMDM.state._previewLibraryId) fd.append("library_id", window.LGMDM.state._previewLibraryId);
+      url = `${LGMDM.api.apiBase()}/master/sync?${params.toString()}`;
+      fetchOpts = { method: "POST", body: fd };
+    }
+    const res = await LGMDM.api.apiFetch(url, { ...fetchOpts, timeout: 0 });
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`HTTP ${res.status}: ${text}`);
@@ -101,7 +106,7 @@ document.getElementById("btnMasterSync")?.addEventListener("click", async () => 
     return;
   }
   LGMDM.ui.clearResults();
-  const paramsObj = collectMasterParamsObj();
+  const paramsObj = window.LGMDM.params.collect();
   window.LGMDM.params.renderPreview(paramsObj, { onConfirm: submitMasterSync, confirmLabel: "Master (descarga)" });
 });
 
@@ -520,6 +525,100 @@ function startPolling(jobId) {
       }
     }
   }, 1500);
+}
+
+// ── 1-CLICK STEM MASTER ──────────────────────────────────────
+document.getElementById("btnOneClickStem")?.addEventListener("click", async () => {
+  if (!window.LGMDM.state.selectedFile) return;
+  LGMDM.ui.clearResults();
+  LGMDM.ui.showStatus(null, "1-Click Stem Master: separando stems…", "processing", 0, "En cola…");
+  const btn = document.getElementById("btnOneClickStem");
+  if (btn) btn.disabled = true;
+  const fd = new FormData();
+  fd.append("file", window.LGMDM.state.selectedFile);
+  const stemsMode = document.getElementById("s-stems-mode")?.value || "demucs_4stem";
+  fd.append("mode", stemsMode);
+  try {
+    const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/stems/one-click-master`, { method: "POST", body: fd });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`HTTP ${res.status}: ${text}`);
+    }
+    const data = await res.json();
+    _pollOneClickJob(data.job_id);
+  } catch (e) {
+    console.debug("Error en 1-click stem master:", e);
+    LGMDM.ui.showStatus(null, "Error: " + e.message, "error");
+    if (btn) btn.disabled = false;
+  }
+});
+
+function _pollOneClickJob(jobId) {
+  const interval = setInterval(async () => {
+    try {
+      const res = await LGMDM.api.apiFetch(`${LGMDM.api.apiBase()}/job/${jobId}`);
+      const data = await res.json();
+      if (data.status === "queued" || data.status === "processing") {
+        LGMDM.ui.showStatus(null, "1-Click Stem Master", "processing", data.progress, data.stage);
+      } else if (data.status === "done") {
+        clearInterval(interval);
+        LGMDM.ui.showStatus(null, "1-Click Stem Master completado ✓", "done");
+        const btn = document.getElementById("btnOneClickStem");
+        if (btn) btn.disabled = false;
+        if (data.stem_analysis) {
+          renderStemsPanel(data.stem_analysis, jobId, data.available_stems || []);
+        }
+        if (data.mix_decision) {
+          _renderMixDecisionPanel(data.mix_decision);
+        }
+        if (data.mix_result?.output_path) {
+          const dlBtn = document.createElement("button");
+          dlBtn.className = "btn btn-primary";
+          dlBtn.textContent = "⬇ Descargar master";
+          dlBtn.style.cssText = "margin-top:8px;";
+          dlBtn.addEventListener("click", () => {
+            LGMDM.api?.downloadAuthenticated?.(`${LGMDM.api.apiBase()}/download/${jobId}`, { filename: "stem_master.wav" });
+          });
+          const results = document.getElementById("resultsArea");
+          if (results) results.appendChild(dlBtn);
+        }
+      } else if (data.status === "error") {
+        clearInterval(interval);
+        LGMDM.ui.showStatus(null, "Error: " + data.error, "error");
+        const btn = document.getElementById("btnOneClickStem");
+        if (btn) btn.disabled = false;
+      }
+    } catch (e) {
+      console.debug("Error polleando 1-click job:", e);
+    }
+  }, 2000);
+}
+
+function _renderMixDecisionPanel(mixDecision) {
+  const container = document.getElementById("resultsArea");
+  if (!container) return;
+  const panel = document.createElement("div");
+  panel.style.cssText = "padding:14px;border:1px solid var(--ui-border,#333);border-radius:8px;margin:8px 0;background:var(--ui-panel-bg,#1a1a2e);";
+  panel.innerHTML = "<h3 style='margin:0 0 8px;font-size:1em;color:var(--ui-text,#e0e0e0);'>🤖 Mix Decision (IA)</h3>";
+  for (const [stemName, params] of Object.entries(mixDecision)) {
+    const row = document.createElement("div");
+    row.style.cssText = "padding:6px 10px;margin:3px 0;border-radius:4px;background:rgba(255,255,255,0.03);";
+    const reasoning = params.reasoning || "";
+    row.innerHTML = `<strong style="color:var(--ui-text,#e0e0e0);">${stemName}</strong>
+      <span style="font-size:0.8em;color:var(--ui-text-dim,#aaa);margin-left:8px;">
+        gain: ${params.gain_db || 0}dB, pan: ${params.pan || 0},
+        hp: ${params.hp_cutoff_hz || 20}Hz,
+        comp: ${params.comp_enabled ? "on" : "off"}
+      </span>`;
+    if (reasoning) {
+      const r = document.createElement("div");
+      r.style.cssText = "font-size:0.8em;color:var(--ui-text-dim,#888);padding-left:12px;margin-top:2px;";
+      r.textContent = reasoning;
+      row.appendChild(r);
+    }
+    panel.appendChild(row);
+  }
+  container.appendChild(panel);
 }
 (function(){ const LG=window.LGMDM=window.LGMDM||{}; LG.mastering=Object.assign(LG.mastering||{}, { submitJob: submitMasterJob, submitSync: submitMasterSync }); })();
 
