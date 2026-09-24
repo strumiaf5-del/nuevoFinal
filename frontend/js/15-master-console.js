@@ -255,53 +255,60 @@
 
   // EQ Chain Response — cascada de 10 biquads: 6 peak + LS + HS + HP + LP.
   // Usa RBJ Audio EQ Cookbook. Multiplica magnitudes, devuelve dB por bin.
+  // FIX: usa `wCut` (cutoff) para los coeficientes del biquad y `w` (eval)
+  // para evaluar la respuesta — antes los dos usaban la misma variable.
   function computeEqChainResponse(params, freqs, fs) {
     const N = freqs.length;
     const dbOut = new Float32Array(N);
-    const num = [0, 0, 0], den = [0, 0, 0];
     function magnitudeAt(f, type) {
-      // type: 'peak' | 'lowshelf' | 'highshelf' | 'lpf' | 'hpf'
       let b0, b1, b2, a0, a1, a2;
-      const w0 = 2 * Math.PI * f / fs;
-      const cw = Math.cos(w0), sw = Math.sin(w0);
+      // Coeficientes: usan la frecuencia de CORTE del filtro (type.freq)
+      const wCut = 2 * Math.PI * type.freq / fs;
+      const cwCut = Math.cos(wCut), swCut = Math.sin(wCut);
+      // Respuesta: usa la frecuencia de EVALUACIÓN (f)
+      const w = 2 * Math.PI * f / fs;
+      const cw = Math.cos(w), sw = Math.sin(w);
       const A = Math.pow(10, type.gain / 40);
-      const alpha = type.Q ? (sw / (2 * type.Q)) : 0;
+      const alpha = type.Q ? (swCut / (2 * type.Q)) : 0;
       if (type.kind === 'peak') {
-        b0 = 1 + alpha * A; b1 = -2 * cw; b2 = 1 - alpha * A;
-        a0 = 1 + alpha / A; a1 = -2 * cw; a2 = 1 - alpha / A;
+        b0 = 1 + alpha * A; b1 = -2 * cwCut; b2 = 1 - alpha * A;
+        a0 = 1 + alpha / A; a1 = -2 * cwCut; a2 = 1 - alpha / A;
       } else if (type.kind === 'lowshelf') {
         const sqA = Math.sqrt(A);
-        b0 = A * ((A + 1) - (A - 1) * cw + 2 * sqA * alpha);
-        b1 = 2 * A * ((A - 1) - (A + 1) * cw);
-        b2 = A * ((A + 1) - (A - 1) * cw - 2 * sqA * alpha);
-        a0 = (A + 1) + (A - 1) * cw + 2 * sqA * alpha;
-        a1 = -2 * ((A - 1) + (A + 1) * cw);
-        a2 = (A + 1) + (A - 1) * cw - 2 * sqA * alpha;
+        b0 = A * ((A + 1) - (A - 1) * cwCut + 2 * sqA * alpha);
+        b1 = 2 * A * ((A - 1) - (A + 1) * cwCut);
+        b2 = A * ((A + 1) - (A - 1) * cwCut - 2 * sqA * alpha);
+        a0 = (A + 1) + (A - 1) * cwCut + 2 * sqA * alpha;
+        a1 = -2 * ((A - 1) + (A + 1) * cwCut);
+        a2 = (A + 1) + (A - 1) * cwCut - 2 * sqA * alpha;
       } else if (type.kind === 'highshelf') {
         const sqA = Math.sqrt(A);
-        b0 = A * ((A + 1) + (A - 1) * cw + 2 * sqA * alpha);
-        b1 = -2 * A * ((A - 1) + (A + 1) * cw);
-        b2 = A * ((A + 1) + (A - 1) * cw - 2 * sqA * alpha);
-        a0 = (A + 1) - (A - 1) * cw + 2 * sqA * alpha;
-        a1 = 2 * ((A - 1) - (A + 1) * cw);
-        a2 = (A + 1) - (A - 1) * cw - 2 * sqA * alpha;
+        b0 = A * ((A + 1) + (A - 1) * cwCut + 2 * sqA * alpha);
+        b1 = -2 * A * ((A - 1) + (A + 1) * cwCut);
+        b2 = A * ((A + 1) + (A - 1) * cwCut - 2 * sqA * alpha);
+        a0 = (A + 1) - (A - 1) * cwCut + 2 * sqA * alpha;
+        a1 = 2 * ((A - 1) - (A + 1) * cwCut);
+        a2 = (A + 1) - (A - 1) * cwCut - 2 * sqA * alpha;
       } else if (type.kind === 'lpf') {
-        b0 = (1 - cw) / 2; b1 = 1 - cw; b2 = (1 - cw) / 2;
-        a0 = 1 + alpha; a1 = -2 * cw; a2 = 1 - alpha;
+        b0 = (1 - cwCut) / 2; b1 = 1 - cwCut; b2 = (1 - cwCut) / 2;
+        a0 = 1 + alpha; a1 = -2 * cwCut; a2 = 1 - alpha;
       } else if (type.kind === 'hpf') {
-        b0 = (1 + cw) / 2; b1 = -(1 + cw); b2 = (1 + cw) / 2;
-        a0 = 1 + alpha; a1 = -2 * cw; a2 = 1 - alpha;
+        b0 = (1 + cwCut) / 2; b1 = -(1 + cwCut); b2 = (1 + cwCut) / 2;
+        a0 = 1 + alpha; a1 = -2 * cwCut; a2 = 1 - alpha;
       }
+      if (!Number.isFinite(a0) || a0 === 0) return 1;
       // Normalize
       b0 /= a0; b1 /= a0; b2 /= a0; a1 /= a0; a2 /= a0;
       // |H(e^jw)| = |b0 + b1·e^-jw + b2·e^-j2w| / |1 + a1·e^-jw + a2·e^-j2w|
-      const numRe = b0 + b1 * cw + b2 * Math.cos(2 * w0);
-      const numIm = -b1 * sw - b2 * Math.sin(2 * w0);
-      const denRe = 1 + a1 * cw + a2 * Math.cos(2 * w0);
-      const denIm = -a1 * sw - a2 * Math.sin(2 * w0);
+      const cos2w = Math.cos(2 * w), sin2w = Math.sin(2 * w);
+      const numRe = b0 + b1 * cw + b2 * cos2w;
+      const numIm = -b1 * sw - b2 * sin2w;
+      const denRe = 1 + a1 * cw + a2 * cos2w;
+      const denIm = -a1 * sw - a2 * sin2w;
       const numMag = Math.sqrt(numRe * numRe + numIm * numIm);
       const denMag = Math.sqrt(denRe * denRe + denIm * denIm);
-      return numMag / Math.max(1e-12, denMag);
+      if (denMag < 1e-12 || !Number.isFinite(numMag) || !Number.isFinite(denMag)) return 1;
+      return numMag / denMag;
     }
     // Collect 10 biquads from params
     const filters = [];
@@ -336,13 +343,15 @@
     if (!lpBypass && lpF >= 20 && lpF <= 20000) {
       filters.push({ kind: 'lpf', freq: lpF, gain: 0, Q: 0.707 });
     }
-    // Compute dB per freq bin
+    // Compute dB per freq bin (clamp a [-60, +60] para evitar log10(0))
     for (let i = 0; i < N; i++) {
       let H = 1;
       for (let j = 0; j < filters.length; j++) {
         H *= magnitudeAt(freqs[i], filters[j]);
       }
-      dbOut[i] = 20 * Math.log10(Math.max(1e-6, H));
+      let db = 20 * Math.log10(Math.max(1e-6, H));
+      if (!Number.isFinite(db)) db = 0;
+      dbOut[i] = Math.max(-60, Math.min(60, db));
     }
     return dbOut;
   }
